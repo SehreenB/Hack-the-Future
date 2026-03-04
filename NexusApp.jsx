@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs } from "./src/services/supabaseService";
 import { getSupplierFinancialHealth } from "./src/services/financialHealthService";
+import { getMaritimeWarnings } from "./src/services/maritimeIntelService";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
@@ -36,6 +37,7 @@ const MANUFACTURER = {
   industry: "Electronics Manufacturing",
   dailyRevenue: "$389K",
   sites: ["Toronto, ON", "Detroit, MI", "Austin, TX"],
+  logisticsCorridors: ["Taiwan Strait", "Red Sea", "Trans-Pacific"],
   escalationContacts: [
     { role: "Ops Lead", name: "Sarah Chen", phone: "+1-416-555-0142" },
     { role: "Procurement Director", name: "Marcus Johnson", phone: "+1-416-555-0198" },
@@ -970,8 +972,16 @@ function PlaybookPage({ globalAlerts }) {
 }
 
 // ─── SUPPLIER MAP PAGE ────────────────────────────────────────────────────────
-function SuppliersPage({ globalSuppliers }) {
+function SuppliersPage({ globalSuppliers, currentProfile }) {
   const pinsToUse = globalSuppliers && globalSuppliers.length > 0 ? globalSuppliers : SUPPLIER_MAP_PINS;
+  const [warningCount, setWarningCount] = useState(0);
+
+  useEffect(() => {
+    const corridors = currentProfile?.logisticsCorridors || ["Taiwan Strait", "Red Sea", "Trans-Pacific"];
+    getMaritimeWarnings(corridors).then(count => {
+      setWarningCount(count);
+    });
+  }, [currentProfile]);
 
   return (
     <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
@@ -1007,7 +1017,11 @@ function SuppliersPage({ globalSuppliers }) {
         {/* Overlay Pins */}
         <div style={{ position: "absolute", inset: 0 }}>
           {pinsToUse.map(pin => {
-            const riskColor = getRiskColor(pin.risk || pin.risk_score);
+            const baseRisk = Number(pin.risk || pin.risk_score);
+            const maritimePenalty = Math.min(15, warningCount * 5);
+            const adjustedRisk = Math.min(100, baseRisk + maritimePenalty);
+            const riskColor = getRiskColor(adjustedRisk);
+
             // Rough map projection for demo
             const lat = Number(pin.lat);
             const lng = Number(pin.lng);
@@ -1016,11 +1030,16 @@ function SuppliersPage({ globalSuppliers }) {
 
             return (
               <div key={pin.id} style={{ position: "absolute", left, top, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
-                <div style={{ width: 20, height: 20, borderRadius: "50%", background: riskColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: (pin.risk || pin.risk_score) > 75 ? "pingAnim 2s infinite" : "none" }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: riskColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: adjustedRisk > 75 ? "pingAnim 2s infinite" : "none" }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: riskColor, border: "2px solid white", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }} />
                 </div>
-                <div style={{ background: "white", padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: C.text, marginTop: 4, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", whiteSpace: "nowrap", border: `1px solid ${C.border}` }}>
-                  {pin.name} • {pin.risk || pin.risk_score}
+                <div style={{ background: "white", padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: C.text, marginTop: 4, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", whiteSpace: "nowrap", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>{pin.name} • {adjustedRisk}</span>
+                  {warningCount > 0 && (
+                    <span style={{ background: C.critical, color: "white", padding: "2px 5px", borderRadius: 4, fontSize: 9 }}>
+                      ⚓ {warningCount} active warnings
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -1041,9 +1060,9 @@ function SuppliersPage({ globalSuppliers }) {
               <tr key={pin.id} style={{ borderBottom: `1px solid #F1F5F9` }}>
                 <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700, color: C.text }}>{pin.name}</td>
                 <td style={{ padding: "14px 16px", fontSize: 12, color: C.textMid }}>{pin.commodity}</td>
-                <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 800, color: getRiskColor(pin.risk || pin.risk_score), fontFamily: "'Sora',sans-serif" }}>{pin.risk || pin.risk_score}</td>
+                <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 800, color: getRiskColor(Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5))), fontFamily: "'Sora',sans-serif" }}>{Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5))}</td>
                 <td style={{ padding: "14px 16px" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: getRiskColor(pin.risk || pin.risk_score) + "20", color: getRiskColor(pin.risk || pin.risk_score) }}>{(pin.status || 'unknown').toUpperCase()}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: getRiskColor(Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5))) + "20", color: getRiskColor(Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5))) }}>{(pin.status || 'unknown').toUpperCase()}</span>
                 </td>
                 <td style={{ padding: "14px 16px", fontSize: 12, color: C.textLight, fontFamily: "monospace" }}>{Number(pin.lat).toFixed(2)}, {Number(pin.lng).toFixed(2)}</td>
               </tr>
@@ -1279,7 +1298,7 @@ export default function NexusApp() {
               {page === "monitor" && <MonitorPage onAnalyze={handleAnalyze} globalAlerts={globalAlerts} />}
               {page === "analysis" && <AnalysisPage focusAlert={focusAlert} globalAlerts={globalAlerts} />}
               {page === "playbook" && <PlaybookPage globalAlerts={globalAlerts} />}
-              {page === "suppliers" && <SuppliersPage globalSuppliers={globalSuppliers} />}
+              {page === "suppliers" && <SuppliersPage globalSuppliers={globalSuppliers} currentProfile={currentProfile} />}
               {page === "audit" && <AuditPage globalAuditLogs={globalAuditLogs} />}
               {page === "settings" && <SettingsPage currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} />}
             </div>
