@@ -38,6 +38,7 @@ const MANUFACTURER = {
   dailyRevenue: "$389K",
   sites: ["Toronto, ON", "Detroit, MI", "Austin, TX"],
   logisticsCorridors: ["Taiwan Strait", "Red Sea", "Trans-Pacific"],
+  geopoliticalRisks: { Taiwan: 30, China: 25, Japan: 10, Mexico: 15, USA: 5 },
   escalationContacts: [
     { role: "Ops Lead", name: "Sarah Chen", phone: "+1-416-555-0142" },
     { role: "Procurement Director", name: "Marcus Johnson", phone: "+1-416-555-0198" },
@@ -486,7 +487,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
 }
 
 // ─── RISK ANALYSIS PAGE ───────────────────────────────────────────────────────
-function AnalysisPage({ focusAlert, globalAlerts }) {
+function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
   const alertsToUse = globalAlerts && globalAlerts.length > 0 ? globalAlerts : ACTIVE_ALERTS;
   const initialAlert = alertsToUse.find(a => a.id === focusAlert?.id) || alertsToUse[0];
 
@@ -582,9 +583,38 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
     "11 LOG: Analysis recorded. Audit trail updated. Memory store patched.",
   ];
 
-  // Inject Yahoo Finance logic trace dynamically if health data exists
-  if (supplierHealth) {
+  // Adjust risk score visually based on geopolitical baseline and financial health
+  let baseRiskScore = selected.riskScore;
+
+  let countryBaseline = 0;
+  let matchedCountry = null;
+  const geoRisks = currentProfile?.geopoliticalRisks || { Taiwan: 30, China: 25, Japan: 10, Mexico: 15, USA: 5 };
+  for (const [country, risk] of Object.entries(geoRisks)) {
+    if ((selected.region + " " + selected.supplier).includes(country) ||
+      (country === "USA" && selected.region.includes("USA"))) {
+      countryBaseline = risk;
+      matchedCountry = country;
+      break;
+    }
+  }
+
+  let adjustedRiskScore = baseRiskScore;
+  if (countryBaseline > 0) {
+    adjustedRiskScore = adjustedRiskScore * (1 + countryBaseline / 100);
+  }
+
+  if (supplierHealth && supplierHealth.insolvencyRiskScore > 0) {
+    adjustedRiskScore += Math.round(supplierHealth.insolvencyRiskScore / 10);
+  }
+
+  adjustedRiskScore = Math.min(100, Math.round(adjustedRiskScore));
+
+  // Inject logic traces
+  if (supplierHealth && supplierHealth.insolvencyRiskScore > 0) {
     baseReasoning.splice(4, 0, `04.b FINANCIAL HEALTH: ${supplierHealth.ticker} risk assessed. Insolvency Risk: ${supplierHealth.insolvencyRiskScore}/100. (+${Math.round(supplierHealth.insolvencyRiskScore / 10)} to base risk).`);
+  }
+  if (matchedCountry) {
+    baseReasoning.splice(4, 0, `04.a GEOPOLITICAL: ${matchedCountry} detected. Baseline risk multiplier applied (*1.${countryBaseline < 10 ? '0' + countryBaseline : countryBaseline} to base score).`);
   }
 
   const mockResult = {
@@ -601,12 +631,6 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
     },
     reasoning: baseReasoning,
   };
-
-  // Adjust risk score visually based on yahoo finance health
-  let adjustedRiskScore = selected.riskScore;
-  if (supplierHealth && supplierHealth.insolvencyRiskScore > 0) {
-    adjustedRiskScore = Math.min(100, selected.riskScore + Math.round(supplierHealth.insolvencyRiskScore / 10));
-  }
 
   return (
     <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
@@ -1296,7 +1320,7 @@ export default function NexusApp() {
             <div style={{ flex: 1, overflowY: "auto" }}>
               {/* the pages need globalAlerts now instead of relying directly on ACTIVE_ALERTS */}
               {page === "monitor" && <MonitorPage onAnalyze={handleAnalyze} globalAlerts={globalAlerts} />}
-              {page === "analysis" && <AnalysisPage focusAlert={focusAlert} globalAlerts={globalAlerts} />}
+              {page === "analysis" && <AnalysisPage focusAlert={focusAlert} globalAlerts={globalAlerts} currentProfile={currentProfile} />}
               {page === "playbook" && <PlaybookPage globalAlerts={globalAlerts} />}
               {page === "suppliers" && <SuppliersPage globalSuppliers={globalSuppliers} currentProfile={currentProfile} />}
               {page === "audit" && <AuditPage globalAuditLogs={globalAuditLogs} />}
