@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs } from "./src/services/supabaseService";
 import { getSupplierFinancialHealth } from "./src/services/financialHealthService";
 import { getMaritimeWarnings } from "./src/services/maritimeIntelService";
+import { getSituationForecast } from "./src/services/llmForecastService";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
@@ -498,12 +499,19 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
 
   const [supplierHealth, setSupplierHealth] = useState(null);
 
+  const [forecast, setForecast] = useState(null);
+  const [isLoadingForecast, setIsLoadingForecast] = useState(false);
+
   // Re-sync if globalAlerts updates
   useEffect(() => {
     if (alertsToUse.length > 0 && !alertsToUse.find(a => a.id === selected?.id)) {
       setSelected(alertsToUse[0]);
     }
   }, [globalAlerts, selected]);
+
+  useEffect(() => {
+    setForecast(null);
+  }, [selected]);
 
   useEffect(() => {
     async function fetchHealth() {
@@ -562,6 +570,13 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
         });
       }
     }
+  };
+
+  const handleGenerateForecast = async () => {
+    setIsLoadingForecast(true);
+    const result = await getSituationForecast(selected, currentProfile || MANUFACTURER);
+    setForecast(result);
+    setIsLoadingForecast(false);
   };
 
   if (!selected) return null;
@@ -884,6 +899,31 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           ))}
         </div>
       </div>
+
+      {/* Intelligence Forecast */}
+      <div style={{ background: "white", borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginTop: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: forecast ? 14 : 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Fira Code',sans-serif" }}>Intelligence Forecast (llama-3.1-8b)</div>
+          {!forecast && (
+            <button
+              onClick={handleGenerateForecast}
+              disabled={isLoadingForecast}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: isLoadingForecast ? "not-allowed" : "pointer", opacity: isLoadingForecast ? 0.7 : 1, display: "flex", alignItems: "center", gap: 6 }}
+            >
+              {isLoadingForecast ? "Analyzing Impact..." : "Generate 24-hr Forecast"}
+            </button>
+          )}
+        </div>
+        {forecast && (
+          <details open style={{ background: "#FAFBFC", borderRadius: 9, padding: "14px 16px", border: `1px solid ${C.border}`, cursor: "pointer", outline: "none" }}>
+            <summary style={{ fontWeight: 700, color: C.brand, marginBottom: 8, outline: "none", fontSize: 12, userSelect: "none" }}>[+] Situation Forecast Breakdown</summary>
+            <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap", cursor: "text" }}>
+              {forecast}
+            </div>
+          </details>
+        )}
+      </div>
+
     </div>
   );
 }
