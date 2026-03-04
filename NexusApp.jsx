@@ -115,6 +115,11 @@ function getRiskColor(score) {
 }
 function getTierLabel(t) { return { 1: "<$50K", 2: "$50K–$250K", 3: "$250K–$1M", 4: ">$1M" }[t] || "—"; }
 
+function getCountryFlag(country) {
+  const flags = { "Taiwan": "🇹🇼", "China": "🇨🇳", "Japan": "🇯🇵", "Mexico": "🇲🇽", "USA": "🇺🇸" };
+  return flags[country] || "🌐";
+}
+
 // ─── RISK GAUGE ───────────────────────────────────────────────────────────────
 function RiskGauge({ score, size = 100 }) {
   const color = getRiskColor(score);
@@ -678,7 +683,15 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
               {selected.escalate && <span style={{ fontSize: 10, fontWeight: 700, color: C.critical, padding: "3px 9px", background: C.criticalLight, borderRadius: 999, border: `1px solid ${C.criticalBorder}` }}>🚨 ESCALATION REQUIRED</span>}
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, color: C.text, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em", marginBottom: 4 }}>{selected.title}</div>
-            <div style={{ fontSize: 13, color: C.textMid }}>{selected.supplier} · {selected.region} · {selected.commodity}</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ fontSize: 13, color: C.textMid, fontWeight: 600 }}>{selected.supplier} · {selected.region} · {selected.commodity}</div>
+              {matchedCountry && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 6, background: countryBaseline > 30 ? C.criticalLight : (countryBaseline >= 15 ? C.mediumLight : C.successLight), color: countryBaseline > 30 ? C.critical : (countryBaseline >= 15 ? C.medium : C.success), fontSize: 10, fontWeight: 800, border: `1px solid ${countryBaseline > 30 ? C.criticalBorder : (countryBaseline >= 15 ? C.mediumBorder : C.successLight)}` }}>
+                  <span>{getCountryFlag(matchedCountry)}</span>
+                  <span>{matchedCountry} {countryBaseline}/100</span>
+                </div>
+              )}
+            </div>
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <RiskGauge score={adjustedRiskScore} size={100} />
@@ -901,23 +914,31 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       </div>
 
       {/* Intelligence Forecast */}
-      <div style={{ background: "white", borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginTop: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: forecast ? 14 : 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Fira Code',sans-serif" }}>Intelligence Forecast (llama-3.1-8b)</div>
-          {!forecast && (
+      <div style={{ background: "#0F172A", borderRadius: 12, padding: "18px 22px", border: `1px solid rgb(51, 65, 85)`, marginTop: 18, color: "#E2E8F0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: forecast || isLoadingForecast ? 14 : 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.medium, fontFamily: "'Fira Code', monospace", letterSpacing: "0.05em" }}>[ FORECAST // 24H OUTLOOK ]</div>
+          {!forecast && !isLoadingForecast && (
             <button
               onClick={handleGenerateForecast}
-              disabled={isLoadingForecast}
-              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: isLoadingForecast ? "not-allowed" : "pointer", opacity: isLoadingForecast ? 0.7 : 1, display: "flex", alignItems: "center", gap: 6 }}
+              style={{ padding: "6px 14px", borderRadius: 4, border: `1px solid ${C.medium}`, background: "transparent", color: C.medium, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Fira Code', monospace" }}
             >
-              {isLoadingForecast ? "Analyzing Impact..." : "Generate 24-hr Forecast"}
+              DECRYPT SCENARIO
             </button>
           )}
         </div>
+
+        {isLoadingForecast && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+            <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "100%", animation: "pulseAnim 1.5s infinite" }} />
+            <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "85%", animation: "pulseAnim 1.5s infinite.2s" }} />
+            <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "92%", animation: "pulseAnim 1.5s infinite.4s" }} />
+          </div>
+        )}
+
         {forecast && (
-          <details open style={{ background: "#FAFBFC", borderRadius: 9, padding: "14px 16px", border: `1px solid ${C.border}`, cursor: "pointer", outline: "none" }}>
-            <summary style={{ fontWeight: 700, color: C.brand, marginBottom: 8, outline: "none", fontSize: 12, userSelect: "none" }}>[+] Situation Forecast Breakdown</summary>
-            <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.6, whiteSpace: "pre-wrap", cursor: "text" }}>
+          <details open style={{ background: "#1E293B", borderRadius: 6, padding: "16px 20px", border: `1px solid rgb(51, 65, 85)`, cursor: "pointer", outline: "none" }}>
+            <summary style={{ fontWeight: 700, color: "#94A3B8", marginBottom: 12, outline: "none", fontSize: 11, userSelect: "none", fontFamily: "'Fira Code', monospace", letterSpacing: "0.05em" }}>[+] SYSTEM.ANALYZE()</summary>
+            <div style={{ fontSize: 12, color: "#38BDF8", lineHeight: 1.7, whiteSpace: "pre-wrap", cursor: "text", fontFamily: "'Fira Code', monospace" }}>
               {forecast}
             </div>
           </details>
@@ -1086,6 +1107,8 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
             const adjustedRisk = Math.min(100, baseRisk + maritimePenalty);
             const riskColor = getRiskColor(adjustedRisk);
 
+            const threatColor = warningCount >= 3 ? C.critical : (warningCount > 0 ? C.medium : C.success);
+
             // Rough map projection for demo
             const lat = Number(pin.lat);
             const lng = Number(pin.lng);
@@ -1094,14 +1117,14 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
 
             return (
               <div key={pin.id} style={{ position: "absolute", left, top, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
-                <div style={{ width: 20, height: 20, borderRadius: "50%", background: riskColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: adjustedRisk > 75 ? "pingAnim 2s infinite" : "none" }}>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: riskColor, border: "2px solid white", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }} />
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: threatColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: "pingAnim 2s infinite" }}>
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: threatColor, border: "2px solid white", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }} />
                 </div>
                 <div style={{ background: "white", padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: C.text, marginTop: 4, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", whiteSpace: "nowrap", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 6 }}>
                   <span>{pin.name} • {adjustedRisk}</span>
                   {warningCount > 0 && (
-                    <span style={{ background: C.critical, color: "white", padding: "2px 5px", borderRadius: 4, fontSize: 9 }}>
-                      ⚓ {warningCount} active warnings
+                    <span style={{ background: threatColor, color: "white", padding: "2px 5px", borderRadius: 4, fontSize: 9 }}>
+                      ⚓ {warningCount} Warnings
                     </span>
                   )}
                 </div>
@@ -1342,6 +1365,7 @@ export default function NexusApp() {
         body { background: #FAF5FF; font-family: 'Fira Sans',system-ui,sans-serif; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         @keyframes pingAnim { 0% { transform:scale(1); opacity:.8; } 75%,100% { transform:scale(2.4); opacity:0; } }
+        @keyframes pulseAnim { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         button { font-family: 'Fira Sans',system-ui,sans-serif; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-thumb { background: #E9D5FF; border-radius: 99px; }
