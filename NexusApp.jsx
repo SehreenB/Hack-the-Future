@@ -3,6 +3,7 @@ import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditL
 import { getSupplierFinancialHealth } from "./src/services/financialHealthService";
 import { getMaritimeWarnings } from "./src/services/maritimeIntelService";
 import { getSituationForecast } from "./src/services/llmForecastService";
+import Globe from "react-globe.gl";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
@@ -1083,55 +1084,52 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
         </div>
       </div>
 
-      {/* Mock Map Container */}
-      <div style={{ background: "#E2E8F0", borderRadius: 16, height: 480, position: "relative", overflow: "hidden", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", backgroundImage: "radial-gradient(#CBD5E1 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
-        <div style={{ position: "absolute", top: 20, left: 20, background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)", padding: "12px 16px", borderRadius: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: `1px solid ${C.border}` }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 8, letterSpacing: "0.05em" }}>MAP LEGEND</div>
+      {/* 3D WebGL Globe Container */}
+      <div style={{ borderRadius: 16, height: 480, position: "relative", overflow: "hidden", border: `1px solid rgb(51, 65, 85)`, background: "#050B14", display: "flex", alignItems: "center", justifyContent: "center" }}>
+
+        <div style={{ position: "absolute", top: 20, left: 20, background: "rgba(15, 23, 42, 0.85)", backdropFilter: "blur(4px)", padding: "12px 16px", borderRadius: 10, border: `1px solid rgb(51, 65, 85)`, zIndex: 10, pointerEvents: "none" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", marginBottom: 8, letterSpacing: "0.05em", fontFamily: "'Fira Code', monospace" }}>[ OSINT MAP LEGEND ]</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {[["Critical", C.critical], ["High", C.high], ["Medium", C.medium], ["Low", C.success]].map(([l, c]) => (
-              <div key={l} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.text }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: c }} /> {l} Risk
+              <div key={l} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#E2E8F0", fontFamily: "'Fira Code', monospace" }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: c, boxShadow: `0 0 6px ${c}88` }} /> {l} Risk
               </div>
             ))}
           </div>
         </div>
 
-        {/* Mock Map Background Visual */}
-        <div style={{ position: "absolute", inset: 0, opacity: 0.1, backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1000 500\"><path d=\"M200 100 Q400 50 600 200 T900 150 M100 300 Q300 400 500 250 T800 350\" stroke=\"%234C1D95\" stroke-width=\"2\" fill=\"none\"/></svg>')", backgroundSize: "cover", backgroundPosition: "center" }} />
+        <Globe
+          width={1200}
+          height={480}
+          globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+          backgroundColor="#050B14"
+          atmosphereColor="#38bdf8"
+          atmosphereAltitude={0.15}
+          htmlElementsData={pinsToUse}
+          htmlLat="lat"
+          htmlLng="lng"
+          htmlElement={(pin) => {
+            const el = document.createElement("div");
+            el.style.cssText = "pointer-events:auto;cursor:pointer;user-select:none;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;";
 
-        {/* Overlay Pins */}
-        <div style={{ position: "absolute", inset: 0 }}>
-          {pinsToUse.map(pin => {
             const baseRisk = Number(pin.risk || pin.risk_score);
             const maritimePenalty = Math.min(15, warningCount * 5);
             const adjustedRisk = Math.min(100, baseRisk + maritimePenalty);
             const riskColor = getRiskColor(adjustedRisk);
-
             const threatColor = warningCount >= 3 ? C.critical : (warningCount > 0 ? C.medium : C.success);
 
-            // Rough map projection for demo
-            const lat = Number(pin.lat);
-            const lng = Number(pin.lng);
-            const left = `${(lng + 180) / 360 * 100}%`;
-            const top = `${(90 - lat) / 180 * 100}%`;
-
-            return (
-              <div key={pin.id} style={{ position: "absolute", left, top, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
-                <div style={{ width: 24, height: 24, borderRadius: "50%", background: threatColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: "pingAnim 2s infinite" }}>
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: threatColor, border: "2px solid white", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }} />
-                </div>
-                <div style={{ background: "white", padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: C.text, marginTop: 4, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", whiteSpace: "nowrap", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span>{pin.name} • {adjustedRisk}</span>
-                  {warningCount > 0 && (
-                    <span style={{ background: threatColor, color: "white", padding: "2px 5px", borderRadius: 4, fontSize: 9 }}>
-                      ⚓ {warningCount} Warnings
-                    </span>
-                  )}
-                </div>
+            el.innerHTML = `
+              <div style="width:24px;height:24px;border-radius:50%;background:${threatColor}40;display:flex;align-items:center;justify-content:center;animation:pingAnim 2s infinite;">
+                <div style="width:12px;height:12px;border-radius:50%;background:${threatColor};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.5);"></div>
               </div>
-            );
-          })}
-        </div>
+              <div style="background:rgba(15, 23, 42, 0.9);padding:6px 10px;border-radius:6px;font-size:10px;font-weight:700;color:#E2E8F0;margin-top:4px;white-space:nowrap;border:1px solid rgb(51, 65, 85);display:flex;align-items:center;gap:6px;font-family:'Fira Code', monospace;">
+                <span>${pin.name} • ${adjustedRisk}</span>
+                ${warningCount > 0 ? `<span style="background:${threatColor};color:white;padding:2px 5px;border-radius:4px;font-size:9px;">⚓ ${warningCount} Warnings</span>` : ''}
+              </div>
+            `;
+            return el;
+          }}
+        />
       </div>
 
       {/* Supplier List Below */}
