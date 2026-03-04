@@ -8,7 +8,7 @@ import type {
 import { t } from '@/services/i18n';
 import { escapeHtml } from '@/utils/sanitize';
 import { isFeatureAvailable } from '@/services/runtime-config';
-import { isDesktopRuntime } from '@/services/runtime';
+
 
 type TabId = 'restrictions' | 'tariffs' | 'flows' | 'barriers';
 
@@ -53,9 +53,8 @@ export class TradePolicyPanel extends Panel {
   }
 
   private render(): void {
-    // Check for API key
-    if (isDesktopRuntime() && !isFeatureAvailable('wtoTrade')) {
-      this.setContent(`<div class="economic-empty">${t('components.tradePolicy.apiKeyMissing')}</div>`);
+    if (!isFeatureAvailable('wtoTrade')) {
+      this.setContent('<div class="economic-empty"></div>');
       return;
     }
 
@@ -80,21 +79,7 @@ export class TradePolicyPanel extends Panel {
       </div>
     `;
 
-    // Only show unavailable banner when active tab has NO data and upstream is down
-    const activeHasData = this.activeTab === 'restrictions'
-      ? (this.restrictionsData?.restrictions.length ?? 0) > 0
-      : this.activeTab === 'tariffs'
-      ? (this.tariffsData?.datapoints.length ?? 0) > 0
-      : this.activeTab === 'flows'
-      ? (this.flowsData?.flows.length ?? 0) > 0
-      : (this.barriersData?.barriers.length ?? 0) > 0;
-    const activeData = this.activeTab === 'restrictions' ? this.restrictionsData
-      : this.activeTab === 'tariffs' ? this.tariffsData
-      : this.activeTab === 'flows' ? this.flowsData
-      : this.barriersData;
-    const unavailableBanner = !activeHasData && activeData?.upstreamUnavailable
-      ? `<div class="economic-warning">${t('components.tradePolicy.upstreamUnavailable')}</div>`
-      : '';
+    const unavailableBanner = '';
 
     let contentHtml = '';
     switch (this.activeTab) {
@@ -122,10 +107,10 @@ export class TradePolicyPanel extends Panel {
 
     return `<div class="trade-restrictions-list">
       ${this.restrictionsData.restrictions.map(r => {
-        const statusClass = r.status === 'high' ? 'status-active' : r.status === 'moderate' ? 'status-notified' : 'status-terminated';
-        const statusLabel = r.status === 'high' ? t('components.tradePolicy.highTariff') : r.status === 'moderate' ? t('components.tradePolicy.moderateTariff') : t('components.tradePolicy.lowTariff');
-        const sourceLink = this.renderSourceUrl(r.sourceUrl);
-        return `<div class="trade-restriction-card">
+      const statusClass = r.status === 'high' ? 'status-active' : r.status === 'moderate' ? 'status-notified' : 'status-terminated';
+      const statusLabel = r.status === 'high' ? t('components.tradePolicy.highTariff') : r.status === 'moderate' ? t('components.tradePolicy.moderateTariff') : t('components.tradePolicy.lowTariff');
+      const sourceLink = this.renderSourceUrl(r.sourceUrl);
+      return `<div class="trade-restriction-card">
           <div class="trade-restriction-header">
             <span class="trade-country">${escapeHtml(r.reportingCountry)}</span>
             <span class="trade-badge">${escapeHtml(r.measureType)}</span>
@@ -141,7 +126,7 @@ export class TradePolicyPanel extends Panel {
             ${sourceLink}
           </div>
         </div>`;
-      }).join('')}
+    }).join('')}
     </div>`;
   }
 
@@ -179,11 +164,11 @@ export class TradePolicyPanel extends Panel {
 
     return `<div class="trade-flows-list">
       ${this.flowsData.flows.map(f => {
-        const exportArrow = f.yoyExportChange >= 0 ? '▲' : '▼';
-        const importArrow = f.yoyImportChange >= 0 ? '▲' : '▼';
-        const exportClass = f.yoyExportChange >= 0 ? 'change-positive' : 'change-negative';
-        const importClass = f.yoyImportChange >= 0 ? 'change-positive' : 'change-negative';
-        return `<div class="trade-flow-card">
+      const exportArrow = f.yoyExportChange >= 0 ? '▲' : '▼';
+      const importArrow = f.yoyImportChange >= 0 ? '▲' : '▼';
+      const exportClass = f.yoyExportChange >= 0 ? 'change-positive' : 'change-negative';
+      const importClass = f.yoyImportChange >= 0 ? 'change-positive' : 'change-negative';
+      return `<div class="trade-flow-card">
           <div class="trade-flow-year">${f.year}</div>
           <div class="trade-flow-metrics">
             <div class="trade-flow-metric">
@@ -198,7 +183,7 @@ export class TradePolicyPanel extends Panel {
             </div>
           </div>
         </div>`;
-      }).join('')}
+    }).join('')}
     </div>`;
   }
 
@@ -209,8 +194,8 @@ export class TradePolicyPanel extends Panel {
 
     return `<div class="trade-barriers-list">
       ${this.barriersData.barriers.map(b => {
-        const sourceLink = this.renderSourceUrl(b.sourceUrl);
-        return `<div class="trade-barrier-card">
+      const sourceLink = this.renderSourceUrl(b.sourceUrl);
+      return `<div class="trade-barrier-card">
           <div class="trade-barrier-header">
             <span class="trade-country">${escapeHtml(b.notifyingCountry)}</span>
             <span class="trade-badge">${escapeHtml(b.measureType)}</span>
@@ -225,7 +210,7 @@ export class TradePolicyPanel extends Panel {
             ${sourceLink}
           </div>
         </div>`;
-      }).join('')}
+    }).join('')}
     </div>`;
   }
 

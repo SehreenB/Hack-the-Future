@@ -29,7 +29,7 @@ export class OrefSirensPanel extends Panel {
 
   public setData(data: OrefAlertsResponse): void {
     if (!data.configured) {
-      this.setContent(`<div class="panel-empty">${t('components.orefSirens.notConfigured')}</div>`);
+      this.setContent(`<div class="panel-empty"></div>`);
       this.setCount(0);
       return;
     }

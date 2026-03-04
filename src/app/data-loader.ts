@@ -173,7 +173,7 @@ export class DataLoaderManager implements AppModule {
     this.applyTimeRangeFilterToNewsPanels();
   }, 120);
 
-  public updateSearchIndex: () => void = () => {};
+  public updateSearchIndex: () => void = () => { };
 
   private digestBreaker = { state: 'closed' as 'closed' | 'open' | 'half-open', failures: 0, cooldownUntil: 0 };
   private readonly digestRequestTimeoutMs = 8000;
@@ -189,7 +189,7 @@ export class DataLoaderManager implements AppModule {
     this.callbacks = callbacks;
   }
 
-  init(): void {}
+  init(): void { }
 
   destroy(): void {
     this.applyTimeRangeFilterToNewsPanelsDebounced.cancel();
@@ -239,7 +239,7 @@ export class DataLoaderManager implements AppModule {
   }
 
   private persistDigest(data: ListFeedDigestResponse): void {
-    setPersistentCache('digest:last-good', data).catch(() => {});
+    setPersistentCache('digest:last-good', data).catch(() => { });
   }
 
   private async loadPersistedDigest(): Promise<ListFeedDigestResponse | null> {
@@ -592,7 +592,7 @@ export class DataLoaderManager implements AppModule {
               item.threat = ai;
               item.isAlert = ai.level === 'critical' || ai.level === 'high';
             }
-          }).catch(() => {});
+          }).catch(() => { });
         }
 
         checkBatchForBreakingAlerts(items);
@@ -635,7 +635,7 @@ export class DataLoaderManager implements AppModule {
               item.threat = ai;
               item.isAlert = ai.level === 'critical' || ai.level === 'high';
             }
-          }).catch(() => {});
+          }).catch(() => { });
         }
 
         checkBatchForBreakingAlerts(items);
@@ -969,18 +969,17 @@ export class DataLoaderManager implements AppModule {
           },
         });
         this.ctx.latestMarkets = stocksResult.data;
-        (this.ctx.panels['markets'] as MarketPanel).renderMarkets(stocksResult.data, stocksResult.rateLimited);
+        (this.ctx.panels['markets'] as MarketPanel).renderMarkets(stocksResult.data);
       }
 
-      const finnhubConfigMsg = 'FINNHUB_API_KEY not configured — add in Settings';
+
 
       if (stocksResult.rateLimited && stocksResult.data.length === 0) {
-        const rlMsg = 'Market data temporarily unavailable (rate limited) — retrying shortly';
-        this.ctx.panels['commodities']?.showError(rlMsg);
+        this.ctx.panels['commodities']?.setContent('<div class="panel-empty"></div>');
       } else if (stocksResult.skipped) {
         this.ctx.statusPanel?.updateApi('Finnhub', { status: 'error' });
         if (stocksResult.data.length === 0) {
-          this.ctx.panels['markets']?.showConfigError(finnhubConfigMsg);
+          this.ctx.panels['markets']?.setContent('<div class="panel-empty"></div>');
         }
       } else {
         this.ctx.statusPanel?.updateApi('Finnhub', { status: 'ok' });
@@ -1006,7 +1005,7 @@ export class DataLoaderManager implements AppModule {
           sectorsResult.data.map((s) => ({ name: s.name, change: s.change }))
         );
       } else {
-        this.ctx.panels['heatmap']?.showConfigError(finnhubConfigMsg);
+        this.ctx.panels['heatmap']?.setContent('<div class="panel-empty"></div>');
       }
 
       const commoditiesPanel = this.ctx.panels['commodities'] as CommoditiesPanel;
@@ -1293,7 +1292,7 @@ export class DataLoaderManager implements AppModule {
         };
         fetchUSNIFleetReport().then((report) => {
           if (report) this.ctx.intelligenceCache.usniFleet = report;
-        }).catch(() => {});
+        }).catch(() => { });
         ingestFlights(flightData.flights);
         ingestVessels(vesselData.vessels);
         ingestMilitaryForCII(flightData.flights, vesselData.vessels);
@@ -1772,7 +1771,7 @@ export class DataLoaderManager implements AppModule {
       };
       fetchUSNIFleetReport().then((report) => {
         if (report) this.ctx.intelligenceCache.usniFleet = report;
-      }).catch(() => {});
+      }).catch(() => { });
       this.ctx.map?.setMilitaryFlights(flightData.flights, flightData.clusters);
       this.ctx.map?.setMilitaryVessels(vesselData.vessels, vesselData.clusters);
       ingestFlights(flightData.flights);
@@ -2254,7 +2253,7 @@ export class DataLoaderManager implements AppModule {
     setPersistentCache(
       DataLoaderManager.HAPPY_ITEMS_CACHE_KEY,
       this.ctx.happyAllItems.map(item => ({ ...item, pubDate: item.pubDate.getTime() }))
-    ).catch(() => {});
+    ).catch(() => { });
   }
 
   private async loadPositiveEvents(): Promise<void> {

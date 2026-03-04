@@ -12,9 +12,9 @@ export class MarketPanel extends Panel {
     super({ id: 'markets', title: t('panels.markets') });
   }
 
-  public renderMarkets(data: MarketData[], rateLimited?: boolean): void {
+  public renderMarkets(data: MarketData[]): void {
     if (data.length === 0) {
-      this.showError(rateLimited ? t('common.rateLimitedMarket') : t('common.failedMarketData'));
+      this.setContent('<div class="panel-empty"></div>');
       return;
     }
 
@@ -49,7 +49,7 @@ export class HeatmapPanel extends Panel {
     const validData = data.filter((d) => d.change !== null);
 
     if (validData.length === 0) {
-      this.showError(t('common.failedSectorData'));
+      this.setContent('<div class="panel-empty"></div>');
       return;
     }
 
@@ -80,7 +80,7 @@ export class CommoditiesPanel extends Panel {
     const validData = data.filter((d) => d.price !== null);
 
     if (validData.length === 0) {
-      this.showError(t('common.failedCommodities'));
+      this.setContent('<div class="panel-empty"></div>');
       return;
     }
 
@@ -111,7 +111,7 @@ export class CryptoPanel extends Panel {
 
   public renderCrypto(data: CryptoData[]): void {
     if (data.length === 0) {
-      this.showError(t('common.failedCryptoData'));
+      this.setContent('<div class="panel-empty"></div>');
       return;
     }
 

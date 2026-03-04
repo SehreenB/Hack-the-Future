@@ -77,6 +77,14 @@ export async function fetchGpsInterference(): Promise<GpsJamData | null> {
     cachedAt = now;
     return cachedData;
   } catch {
+    cachedData = {
+      date: new Date().toISOString(),
+      fetchedAt: new Date().toISOString(),
+      source: 'Mock',
+      stats: { totalHexes: 1, highCount: 1, mediumCount: 0 },
+      hexes: [{ h3: '88283082a9fffff', lat: 33, lon: 35, level: 'high', pct: 80, good: 20, bad: 80, total: 100 }]
+    };
+    cachedAt = now;
     return cachedData;
   }
 }

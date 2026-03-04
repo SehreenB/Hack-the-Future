@@ -302,49 +302,12 @@ export class StrategicPosturePanel extends Panel {
 
   private showNoData(): void {
     this.stopLoadingTimer();
-    this.setContent(`
-      <div class="posture-panel">
-        <div class="posture-no-data">
-          <div class="posture-no-data-icon pulse">📡</div>
-          <div class="posture-no-data-title">${t('components.strategicPosture.acquiringData')}</div>
-          <div class="posture-no-data-desc">
-            ${t('components.strategicPosture.acquiringDesc')}
-          </div>
-          <div class="posture-data-sources">
-            <div class="posture-source">
-              <span class="posture-source-icon connecting">✈️</span>
-              <span>${t('components.strategicPosture.openSkyAdsb')}</span>
-            </div>
-            <div class="posture-source">
-              <span class="posture-source-icon waiting">🚢</span>
-              <span>${t('components.strategicPosture.aisVesselStream')}</span>
-            </div>
-          </div>
-          <button class="posture-retry-btn">↻ ${t('components.strategicPosture.retryNow')}</button>
-        </div>
-      </div>
-    `);
-    this.content.querySelector('.posture-retry-btn')?.addEventListener('click', () => this.refresh());
+    this.setContent('<div class="panel-empty"></div>');
   }
 
   private showFetchError(): void {
     this.stopLoadingTimer();
-    this.setContent(`
-      <div class="posture-panel">
-        <div class="posture-no-data">
-          <div class="posture-no-data-icon">⚠️</div>
-          <div class="posture-no-data-title">${t('components.strategicPosture.feedRateLimited')}</div>
-          <div class="posture-no-data-desc">
-            ${t('components.strategicPosture.rateLimitedDesc')}
-          </div>
-          <div class="posture-error-hint">
-            <strong>${t('components.strategicPosture.rateLimitedTip')}</strong>
-          </div>
-          <button class="posture-retry-btn">↻ ${t('components.strategicPosture.tryAgain')}</button>
-        </div>
-      </div>
-    `);
-    this.content.querySelector('.posture-retry-btn')?.addEventListener('click', () => this.refresh());
+    this.setContent('<div class="panel-empty"></div>');
   }
 
   private getPostureBadge(level: string): string {

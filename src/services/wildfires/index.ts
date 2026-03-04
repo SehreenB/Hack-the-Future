@@ -6,6 +6,7 @@ import {
 } from '@/generated/client/worldmonitor/wildfire/v1/service_client';
 import { createCircuitBreaker } from '@/utils';
 import { getHydratedData } from '@/services/bootstrap';
+import { isFeatureAvailable } from '@/services/runtime-config';
 
 export type { FireDetection };
 
@@ -54,7 +55,11 @@ export async function fetchAllFires(_days?: number): Promise<FetchResult> {
   const detections = response.fireDetections;
 
   if (detections.length === 0) {
-    return { regions: {}, totalCount: 0, skipped: true, reason: 'NASA_FIRMS_API_KEY not configured' };
+    const isNasaFirmsConfigured = isFeatureAvailable('nasaFirms');
+    if (!isNasaFirmsConfigured) {
+      return { regions: {}, totalCount: 0, skipped: true, reason: 'NASA_FIRMS_API_KEY not configured' };
+    }
+    return { regions: {}, totalCount: 0 };
   }
 
   const regions: Record<string, FireDetection[]> = {};
