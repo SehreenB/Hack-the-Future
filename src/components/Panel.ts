@@ -12,6 +12,7 @@ export interface PanelOptions {
   className?: string;
   trackActivity?: boolean;
   infoTooltip?: string;
+  glowing?: boolean;
 }
 
 const PANEL_SPANS_KEY = 'worldmonitor-panel-spans';
@@ -261,6 +262,58 @@ export class Panel {
 
     this.element.appendChild(this.header);
     this.element.appendChild(this.content);
+
+    if (options.glowing) {
+      this.element.classList.add('has-glowing-effect');
+      const effectContainer = document.createElement('div');
+      effectContainer.className = 'glowing-effect-container';
+
+      const glowDiv = document.createElement('div');
+      glowDiv.className = 'glowing-effect-glow';
+      effectContainer.appendChild(glowDiv);
+
+      this.element.insertBefore(effectContainer, this.element.firstChild);
+
+      // Track pointer movement
+      let rafId = 0;
+      document.body.addEventListener('pointermove', (e: PointerEvent) => {
+        if (!effectContainer.isConnected) return;
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          const rect = this.element.getBoundingClientRect();
+          const mouseX = e.clientX;
+          const mouseY = e.clientY;
+
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+
+          const inactiveZone = 0.7;
+          const inactiveRadius = 0.5 * Math.min(rect.width, rect.height) * inactiveZone;
+          const dist = Math.hypot(mouseX - centerX, mouseY - centerY);
+
+          if (dist < inactiveRadius) {
+            effectContainer.style.setProperty('--active', '0');
+            return;
+          }
+
+          const proximity = 64;
+          const isActive =
+            mouseX > rect.left - proximity &&
+            mouseX < rect.right + proximity &&
+            mouseY > rect.top - proximity &&
+            mouseY < rect.bottom + proximity;
+
+          effectContainer.style.setProperty('--active', isActive ? '1' : '0');
+
+          if (isActive) {
+            let targetAngle = (180 * Math.atan2(mouseY - centerY, mouseX - centerX)) / Math.PI + 90;
+            const currentAngle = parseFloat(effectContainer.style.getPropertyValue('--start')) || 0;
+            const angleDiff = ((targetAngle - currentAngle + 180) % 360) - 180;
+            effectContainer.style.setProperty('--start', String(currentAngle + angleDiff));
+          }
+        });
+      }, { passive: true });
+    }
 
     // Add resize handle
     this.resizeHandle = document.createElement('div');

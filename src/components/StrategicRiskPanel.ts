@@ -41,6 +41,7 @@ export class StrategicRiskPanel extends Panel {
       showCount: false,
       trackActivity: true,
       infoTooltip: t('components.strategicRisk.infoTooltip'),
+      glowing: true,
     });
     this.init();
   }

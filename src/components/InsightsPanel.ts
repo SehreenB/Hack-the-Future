@@ -36,6 +36,7 @@ export class InsightsPanel extends Panel {
       title: t('panels.insights'),
       showCount: false,
       infoTooltip: t('components.insights.infoTooltip'),
+      glowing: true,
     });
 
     if (isMobileDevice()) {
@@ -624,7 +625,7 @@ export class InsightsPanel extends Panel {
     // Show focal points with news+signals correlations, or those with active strikes
     const correlatedFPs = this.lastFocalPoints.filter(
       fp => (fp.newsMentions > 0 && fp.signalCount > 0) ||
-            fp.signalTypes.includes('active_strike')
+        fp.signalTypes.includes('active_strike')
     ).slice(0, 5);
 
     if (correlatedFPs.length === 0) {

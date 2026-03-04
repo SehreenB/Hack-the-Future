@@ -2223,7 +2223,7 @@ body.live-news-fullscreen-active .map-legend {
   display: none !important;
 }
 
-body.live-news-fullscreen-active .panels-grid > *:not(.live-news-fullscreen) {
+body.live-news-fullscreen-active .panels-grid>*:not(.live-news-fullscreen) {
   visibility: hidden !important;
 }
 
@@ -2527,6 +2527,7 @@ body.live-news-fullscreen-active .panels-grid > *:not(.live-news-fullscreen) {
 
 /* Mobile: make toolbars swipeable (horizontal scroll) */
 @media (max-width: 768px) {
+
   /* Live News channels */
   .live-news-switcher {
     flex-wrap: nowrap;
@@ -2579,6 +2580,7 @@ body.live-news-fullscreen-active .panels-grid > *:not(.live-news-fullscreen) {
     flex: 0 0 auto;
   }
 }
+
 /* News Items */
 .item {
   padding: 8px 0;
@@ -12584,8 +12586,15 @@ a.prediction-link:hover {
 }
 
 @keyframes globe-beta-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(0, 229, 255, 0.3), 0 0 20px rgba(0, 229, 255, 0.15), inset 0 0 8px rgba(0, 229, 255, 0.05); }
-  50% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 30px rgba(0, 229, 255, 0.25), inset 0 0 12px rgba(0, 229, 255, 0.1); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(0, 229, 255, 0.3), 0 0 20px rgba(0, 229, 255, 0.15), inset 0 0 8px rgba(0, 229, 255, 0.05);
+  }
+
+  50% {
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 30px rgba(0, 229, 255, 0.25), inset 0 0 12px rgba(0, 229, 255, 0.1);
+  }
 }
 
 /* deck.gl Controls */
@@ -16637,7 +16646,83 @@ body.has-breaking-alert .panels-grid {
 }
 
 @keyframes globe-pulse {
-  0%   { transform: scale(1); opacity: 0.6; }
-  70%  { transform: scale(2.5); opacity: 0; }
-  100% { transform: scale(2.5); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  70% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Glowing Effect */
+.has-glowing-effect {
+  position: relative;
+}
+
+.has-glowing-effect .panel-header,
+.has-glowing-effect .panel-content,
+.has-glowing-effect .panel-resize-handle,
+.has-glowing-effect .panel-col-resize-handle {
+  position: relative;
+  z-index: 2;
+}
+
+.glowing-effect-container {
+  --blur: 0px;
+  --spread: 60;
+  --start: 0;
+  --active: 0;
+  --glowingeffect-border-width: 2px;
+  --repeating-conic-gradient-times: 5;
+  --gradient: radial-gradient(circle, #dd7bbb 10%, #dd7bbb00 20%),
+    radial-gradient(circle at 40% 40%, #00ffcc 5%, #00ffcc00 15%),
+    radial-gradient(circle at 60% 60%, #0db87b 10%, #0db87b00 20%),
+    radial-gradient(circle at 40% 60%, #00aaff 10%, #00aaff00 20%),
+    repeating-conic-gradient(from 236.84deg at 50% 50%,
+      #dd7bbb 0%,
+      #00ffcc calc(25% / var(--repeating-conic-gradient-times)),
+      #0db87b calc(50% / var(--repeating-conic-gradient-times)),
+      #00aaff calc(75% / var(--repeating-conic-gradient-times)),
+      #dd7bbb calc(100% / var(--repeating-conic-gradient-times)));
+
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 1;
+  transition: opacity 0.3s;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.glowing-effect-glow {
+  border-radius: inherit;
+  position: absolute;
+  inset: 0;
+}
+
+.glowing-effect-glow::after {
+  content: "";
+  border-radius: inherit;
+  position: absolute;
+  inset: calc(-1 * var(--glowingeffect-border-width));
+  border: var(--glowingeffect-border-width) solid transparent;
+  background: var(--gradient);
+  background-attachment: fixed;
+  opacity: var(--active);
+  transition: opacity 0.3s;
+  mask-clip: padding-box, border-box;
+  mask-composite: intersect;
+  mask-image: linear-gradient(#0000, #0000), conic-gradient(from calc((var(--start) - var(--spread)) * 1deg), #00000000 0deg, #fff, #00000000 calc(var(--spread) * 2deg));
+  -webkit-mask-clip: padding-box, border-box;
+  -webkit-mask-composite: source-in;
+  -webkit-mask-image: linear-gradient(#0000, #0000), conic-gradient(from calc((var(--start) - var(--spread)) * 1deg), #00000000 0deg, #fff, #00000000 calc(var(--spread) * 2deg));
 }

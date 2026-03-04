@@ -612,6 +612,7 @@ export class DataLoaderManager implements AppModule {
           } catch (e) { console.warn(`[Baseline] news:${category} write failed:`, e); }
         }
 
+        dataFreshness.recordUpdate('rss', items.length);
         return items;
       }
 
@@ -759,6 +760,7 @@ export class DataLoaderManager implements AppModule {
       });
       this.ctx.statusPanel?.updateApi('RSS2JSON', { status: 'ok' });
 
+      dataFreshness.recordUpdate('rss', items.length);
       return items;
     } catch (error) {
       this.ctx.statusPanel?.updateFeed(category.charAt(0).toUpperCase() + category.slice(1), {
