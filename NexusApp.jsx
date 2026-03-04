@@ -3,7 +3,8 @@ import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditL
 import { getSupplierFinancialHealth } from "./src/services/financialHealthService";
 import { getMaritimeWarnings } from "./src/services/maritimeIntelService";
 import { getSituationForecast } from "./src/services/llmForecastService";
-import Globe from "react-globe.gl";
+import Map, { Marker } from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
@@ -1098,38 +1099,36 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
           </div>
         </div>
 
-        <Globe
-          width={1200}
-          height={480}
-          globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-          backgroundColor="#050B14"
-          atmosphereColor="#38bdf8"
-          atmosphereAltitude={0.15}
-          htmlElementsData={pinsToUse}
-          htmlLat="lat"
-          htmlLng="lng"
-          htmlElement={(pin) => {
-            const el = document.createElement("div");
-            el.style.cssText = "pointer-events:auto;cursor:pointer;user-select:none;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;";
-
+        <Map
+          initialViewState={{ longitude: 0, latitude: 20, zoom: 1.5 }}
+          mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+          attributionControl={false}
+        >
+          {pinsToUse.map(pin => {
             const baseRisk = Number(pin.risk || pin.risk_score);
             const maritimePenalty = Math.min(15, warningCount * 5);
             const adjustedRisk = Math.min(100, baseRisk + maritimePenalty);
-            const riskColor = getRiskColor(adjustedRisk);
             const threatColor = warningCount >= 3 ? C.critical : (warningCount > 0 ? C.medium : C.success);
 
-            el.innerHTML = `
-              <div style="width:24px;height:24px;border-radius:50%;background:${threatColor}40;display:flex;align-items:center;justify-content:center;animation:pingAnim 2s infinite;">
-                <div style="width:12px;height:12px;border-radius:50%;background:${threatColor};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.5);"></div>
-              </div>
-              <div style="background:rgba(15, 23, 42, 0.9);padding:6px 10px;border-radius:6px;font-size:10px;font-weight:700;color:#E2E8F0;margin-top:4px;white-space:nowrap;border:1px solid rgb(51, 65, 85);display:flex;align-items:center;gap:6px;font-family:'Fira Code', monospace;">
-                <span>${pin.name} • ${adjustedRisk}</span>
-                ${warningCount > 0 ? `<span style="background:${threatColor};color:white;padding:2px 5px;border-radius:4px;font-size:9px;">⚓ ${warningCount} Warnings</span>` : ''}
-              </div>
-            `;
-            return el;
-          }}
-        />
+            return (
+              <Marker key={pin.id} longitude={Number(pin.lng)} latitude={Number(pin.lat)} anchor="center">
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", pointerEvents: "auto" }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: threatColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: "pingAnim 2s infinite" }}>
+                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: threatColor, border: "2px solid white", boxShadow: "0 2px 4px rgba(0,0,0,0.5)" }} />
+                  </div>
+                  <div style={{ background: "rgba(15, 23, 42, 0.9)", padding: "6px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: "#E2E8F0", marginTop: 4, whiteSpace: "nowrap", border: "1px solid rgb(51, 65, 85)", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Fira Code', monospace" }}>
+                    <span>{pin.name} • {adjustedRisk}</span>
+                    {warningCount > 0 && (
+                      <span style={{ background: threatColor, color: "white", padding: "2px 5px", borderRadius: 4, fontSize: 9 }}>
+                        ⚓ {warningCount} Warnings
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Marker>
+            );
+          })}
+        </Map>
       </div>
 
       {/* Supplier List Below */}

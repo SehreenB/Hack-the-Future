@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
+    "maplibre-gl": "^5.19.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-globe.gl": "^2.37.0",
-    "three": "^0.183.2"
+    "react-map-gl": "^8.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
