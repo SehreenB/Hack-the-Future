@@ -164,6 +164,34 @@ export async function writeAuditLog({ eventType, disruptionId, actor, action, pa
   return data;
 }
 
+export async function getAuditLogs(limit = 100) {
+  const client = await getClient();
+
+  if (!client) {
+    return memoryStore.auditLog.slice(0, limit);
+  }
+
+  const { data, error } = await client
+    .from("audit_log")
+    .select(`
+      *,
+      disruptions (
+        title,
+        supplier,
+        region,
+        risk_score,
+        confidence_score,
+        cost_of_delay_tier,
+        escalated
+      )
+    `)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) console.error("[Supabase] Get audit logs error:", error.message);
+  return data || [];
+}
+
 // ── REAL-TIME SUBSCRIPTION ────────────────────────────────────────────────────
 
 /**

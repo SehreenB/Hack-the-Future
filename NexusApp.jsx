@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { getDisruptionHistory, subscribeToDisruptions, getSuppliers } from "./src/services/supabaseService";
+import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs } from "./src/services/supabaseService";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
@@ -253,6 +253,7 @@ function Sidebar({ page, setPage }) {
     { id: "playbook", icon: "◈", label: "Playbook" },
     { id: "suppliers", icon: "◻", label: "Supplier Map" },
     { id: "audit", icon: "∿", label: "Audit Log" },
+    { id: "settings", icon: "⚙", label: "Settings" },
   ];
 
   return (
@@ -402,13 +403,23 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
                         <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10 }}>{a.supplier} · {a.region} · {a.commodity}</div>
                         <p style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, margin: 0, marginBottom: 12 }}>{a.summary}</p>
 
-                        {/* Reasoning Trace snippet */}
-                        <div style={{ background: "#F8FAFC", padding: "10px 14px", borderRadius: 8, border: `1px dashed ${C.border}`, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5 }}>
-                          <div style={{ fontWeight: 700, color: C.text, marginBottom: 4 }}>[AI Reasoning Trace]</div>
-                          <div>{`> SENSE: Signal detected for ${a.supplier} in ${a.region}.`}</div>
-                          <div>{`> SCORE: Risk mapped to ${a.commodity} (Confidence: ${a.confidenceScore}%).`}</div>
-                          <div>{`> IMPACT: ${a.revenueAtRisk} Revenue at Risk. CoD Tier ${a.costOfDelayTier}.`}</div>
-                        </div>
+                        {/* Collapsible Reasoning Trace snippet */}
+                        {a.reasoningTrace && a.reasoningTrace.length > 0 && (
+                          <details style={{ background: "#F8FAFC", padding: "10px 14px", borderRadius: 8, border: `1px dashed ${C.border}`, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5, cursor: "pointer", outline: "none" }}>
+                            <summary style={{ fontWeight: 700, color: C.text, marginBottom: 4, outline: "none", userSelect: "none" }}>[+] AI Reasoning Trace : Expand Logic Chain</summary>
+                            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                              {a.reasoningTrace.map((step, idx) => {
+                                const [label, ...rest] = step.split(":");
+                                return (
+                                  <div key={idx} style={{ display: "flex", gap: 8 }}>
+                                    <span style={{ color: C.brand, fontWeight: 700, whiteSpace: "nowrap" }}>{label}:</span>
+                                    <span>{rest.join(":")}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </details>
+                        )}
                       </div>
 
                       {/* Right metrics */}
@@ -477,8 +488,9 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
   const initialAlert = alertsToUse.find(a => a.id === focusAlert?.id) || alertsToUse[0];
 
   const [selected, setSelected] = useState(initialAlert);
-  const [emailApproved, setEmailApproved] = useState(false);
-  const [erpAcknowledged, setErpAcknowledged] = useState(false);
+  const [emailStatus, setEmailStatus] = useState("pending");
+  const [erpStatus, setErpStatus] = useState("pending");
+  const [emailSending, setEmailSending] = useState(false);
 
   // Re-sync if globalAlerts updates
   useEffect(() => {
@@ -486,6 +498,47 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
       setSelected(alertsToUse[0]);
     }
   }, [globalAlerts, selected]);
+
+  // Handle action approval/dismissal (L2 Autonomy Gate)
+  const handleAction = async (type, action) => {
+    if (type === "email") {
+      setEmailStatus(action);
+      if (action === "approved") {
+        setEmailSending(true);
+        await writeAuditLog({
+          eventType: "supplier_communication",
+          disruptionId: selected.id,
+          action: "email_approved_and_sent",
+          payload: { to: `procurement@${selected.supplier.toLowerCase().split("/")[0].trim().replace(/[^a-z]/g, "")}.com`, subject: `[URGENT] Supply Continuity Review — ${selected.commodity}` }
+        });
+        setEmailSending(false);
+      } else if (action === "dismissed") {
+        await writeAuditLog({
+          eventType: "supplier_communication",
+          disruptionId: selected.id,
+          action: "email_dismissed",
+          payload: {}
+        });
+      }
+    } else if (type === "erp") {
+      setErpStatus(action);
+      if (action === "approved") {
+        await writeAuditLog({
+          eventType: "erp_adjustment",
+          disruptionId: selected.id,
+          action: "erp_flag_approved",
+          payload: { action: "Safety stock threshold review", sku: "SKU-4421, SKU-4422" }
+        });
+      } else if (action === "dismissed") {
+        await writeAuditLog({
+          eventType: "erp_adjustment",
+          disruptionId: selected.id,
+          action: "erp_flag_dismissed",
+          payload: {}
+        });
+      }
+    }
+  };
 
   if (!selected) return null;
   const cfg = SEV_CFG[selected.severity] || SEV_CFG.medium;
@@ -528,7 +581,7 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
           const c = SEV_CFG[a.severity] || SEV_CFG.medium;
           const isActive = selected.id === a.id;
           return (
-            <button key={a.id} onClick={() => { setSelected(a); setEmailApproved(false); setErpAcknowledged(false); }}
+            <button key={a.id} onClick={() => { setSelected(a); setEmailStatus("pending"); setErpStatus("pending"); }}
               style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${isActive ? c.color : C.border}`, background: isActive ? c.bg : "white", cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans',sans-serif" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontSize: 10, fontWeight: 800, color: c.color, letterSpacing: "0.04em" }}>{c.label.toUpperCase()}</span>
@@ -659,7 +712,9 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
         <div style={{ background: "white", borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Draft Supplier Email</div>
-            <span style={{ fontSize: 11, fontWeight: 700, color: C.high, background: C.highLight, padding: "3px 10px", borderRadius: 999, border: `1px solid ${C.highBorder}` }}>⏸ AWAITING APPROVAL</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: emailStatus === "pending" ? C.high : (emailStatus === "approved" ? C.success : C.textMid), background: emailStatus === "pending" ? C.highLight : (emailStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${emailStatus === "pending" ? C.highBorder : (emailStatus === "approved" ? C.success : C.border)}` }}>
+              {emailStatus === "pending" ? "⏸ AWAITING APPROVAL" : (emailStatus === "approved" ? "✓ EXECUTED" : "DISMISSED")}
+            </span>
           </div>
           <div style={{ background: "#FAFBFC", borderRadius: 8, padding: "12px 14px", marginBottom: 12, fontFamily: "monospace" }}>
             <div style={{ fontSize: 12, color: C.textMid, marginBottom: 4 }}><span style={{ color: C.brand, fontWeight: 700 }}>TO: </span>procurement@{selected.supplier.toLowerCase().split("/")[0].trim().replace(/[^a-z]/g, "")}.com</div>
@@ -673,17 +728,31 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontSize: 11, color: C.textLight }}>🔒 Human approval required before sending</div>
-            <button onClick={() => setEmailApproved(true)} disabled={emailApproved}
-              style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand}`, background: emailApproved ? C.successLight : "white", color: emailApproved ? C.success : C.brand, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", opacity: emailApproved ? 0.7 : 1 }}>
-              {emailApproved ? "✓ Approved (Not Sent)" : "Approve Draft"}
-            </button>
+            {emailStatus === "pending" ? (
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => handleAction("email", "dismissed")} disabled={emailSending}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: "white", color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  Dismiss
+                </button>
+                <button onClick={() => handleAction("email", "approved")} disabled={emailSending}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand}`, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  {emailSending ? "Sending..." : "Approve & Send"}
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${emailStatus === "approved" ? C.success : C.border}`, background: emailStatus === "approved" ? C.successLight : "#F1F5F9", color: emailStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
+                {emailStatus === "approved" ? "✓ Approved & Sent" : "Dismissed"}
+              </div>
+            )}
           </div>
         </div>
 
         <div style={{ background: "white", borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>ERP Adjustment Flag</div>
-            <span style={{ fontSize: 11, color: C.textLight, background: "#F8FAFC", padding: "3px 10px", borderRadius: 999, border: `1px solid ${C.border}` }}>◈ SIMULATED ONLY</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: erpStatus === "pending" ? C.textLight : (erpStatus === "approved" ? C.success : C.textMid), background: erpStatus === "pending" ? "#F8FAFC" : (erpStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${erpStatus === "pending" ? C.border : (erpStatus === "approved" ? C.success : C.border)}` }}>
+              {erpStatus === "pending" ? "◈ SIMULATED ONLY" : (erpStatus === "approved" ? "✓ EXECUTED" : "DISMISSED")}
+            </span>
           </div>
           {[["Action", "Safety stock threshold review"], ["System", "SAP S/4HANA"], ["Reorder Point", "+20% for SKU-4421, SKU-4422 for 45 days"], ["Safety Stock Rec", "Build 30-day buffer from alternate source"], ["Status", "🔒 SIMULATED — No write performed"]].map(([k, v]) => (
             <div key={k} style={{ display: "flex", gap: 12, marginBottom: 8, alignItems: "flex-start" }}>
@@ -693,10 +762,22 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
           ))}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.textLight }}><Icons.Lock /> No ERP writes without CFO approval</div>
-            <button onClick={() => setErpAcknowledged(true)} disabled={erpAcknowledged}
-              style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand}`, background: erpAcknowledged ? C.successLight : "white", color: erpAcknowledged ? C.success : C.brand, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
-              {erpAcknowledged ? "✓ Acknowledged" : "Acknowledge"}
-            </button>
+            {erpStatus === "pending" ? (
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => handleAction("erp", "dismissed")}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: "white", color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
+                  Dismiss
+                </button>
+                <button onClick={() => handleAction("erp", "approved")}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand}`, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
+                  Approve Write
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${erpStatus === "approved" ? C.success : C.border}`, background: erpStatus === "approved" ? C.successLight : "#F1F5F9", color: erpStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'Fira Sans',sans-serif" }}>
+                {erpStatus === "approved" ? "✓ Write Approved" : "Dismissed"}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -790,12 +871,23 @@ function PlaybookPage({ globalAlerts }) {
                   <span><strong style={{ color: C.textMid }}>Trade-off:</strong> {p.tradeOff}</span>
                 </div>
 
-                {/* Reasoning Trace snippet for Playbook */}
-                <div style={{ marginTop: 10, background: "white", padding: "8px 12px", borderRadius: 6, border: `1px solid ${C.border}`, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5 }}>
-                  <div style={{ fontWeight: 700, color: C.brand, marginBottom: 4, letterSpacing: "0.02em" }}>[Simulation Reasoning]</div>
-                  <div>{`> Feasibility (${p.composite} composite) evaluated against ${p.time} implementation time.`}</div>
-                  <div>{`> Expected risk reduction: ${p.reduction || 0}%. Projected cost: ${p.cost}.`}</div>
-                </div>
+                {/* Collapsible Reasoning Trace snippet for Playbook */}
+                {p.reasoningTrace && p.reasoningTrace.length > 0 && (
+                  <details style={{ marginTop: 10, background: "white", padding: "10px 14px", borderRadius: 6, border: `1px solid ${C.border}`, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5, cursor: "pointer", outline: "none" }}>
+                    <summary style={{ fontWeight: 700, color: C.brand, marginBottom: 4, letterSpacing: "0.02em", outline: "none", userSelect: "none" }}>[+] Simulation Reasoning : Expand Steps</summary>
+                    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                      {p.reasoningTrace.map((step, idx) => {
+                        const [label, ...rest] = step.split(":");
+                        return (
+                          <div key={idx} style={{ display: "flex", gap: 8 }}>
+                            <span style={{ color: C.text, fontWeight: 700, whiteSpace: "nowrap" }}>{label}:</span>
+                            <span>{rest.join(":")}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </details>
+                )}
               </div>
               <div style={{ display: "flex", gap: 24, flexShrink: 0, paddingLeft: 16, borderLeft: `1px dashed ${C.border}` }}>
                 {[["Cost", p.cost], ["Time", p.time], ["Score", p.composite]].map(([k, v]) => (
@@ -900,11 +992,13 @@ function SuppliersPage({ globalSuppliers }) {
 }
 
 // ─── AUDIT LOG PAGE ───────────────────────────────────────────────────────────
-function AuditPage() {
+function AuditPage({ globalAuditLogs }) {
+  const logsToUse = globalAuditLogs && globalAuditLogs.length > 0 ? globalAuditLogs : AUDIT_LOG_MOCK;
+
   return (
     <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
       <div style={{ display: "flex", gap: 14, marginBottom: 22 }}>
-        {[["Analyses Run", "3", C.brand], ["Escalations", "2", C.critical], ["HITL Overrides", "0", C.success], ["FP Rate", "12%", C.success]].map(([l, v, c]) => (
+        {[["Analyses Run", logsToUse.length.toString(), C.brand], ["Escalations", logsToUse.filter(l => l.disruptions?.escalated || l.escalated).length.toString(), C.critical], ["HITL Actions", logsToUse.filter(l => l.action).length.toString(), C.success], ["FP Rate", "12%", C.success]].map(([l, v, c]) => (
           <div key={l} style={{ flex: 1, background: "white", borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border}` }}>
             <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6 }}>{l}</div>
             <div style={{ fontSize: 28, fontWeight: 900, color: c, fontFamily: "'Fira Code',sans-serif", letterSpacing: "-0.03em" }}>{v}</div>
@@ -916,27 +1010,95 @@ function AuditPage() {
         <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 16, fontFamily: "'Sora',sans-serif" }}>Immutable Audit Trail</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr>{["ID", "Time", "Supplier", "Region", "Risk", "Confidence", "Tier", "Escalated"].map(h => (
+            <tr>{["ID", "Time", "Action", "Supplier", "Region", "Risk", "Confidence", "Tier", "Escalated"].map(h => (
               <th key={h} style={{ padding: "9px 12px", fontSize: 10, fontWeight: 700, color: C.textLight, textAlign: "left", letterSpacing: "0.05em", borderBottom: `1px solid ${C.border}` }}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
-            {AUDIT_LOG_MOCK.map(r => (
-              <tr key={r.id} style={{ borderBottom: `1px solid #F8FAFC` }}>
-                <td style={{ padding: "12px", fontSize: 12, fontWeight: 600, color: C.brand, fontFamily: "monospace" }}>{r.id}</td>
-                <td style={{ padding: "12px", fontSize: 12, color: C.textMid }}>{r.ts}</td>
-                <td style={{ padding: "12px", fontSize: 12, color: C.text }}>{r.supplier}</td>
-                <td style={{ padding: "12px", fontSize: 12, color: C.textMid }}>{r.region}</td>
-                <td style={{ padding: "12px", fontSize: 13, fontWeight: 800, color: getRiskColor(r.risk), fontFamily: "'Fira Code',sans-serif" }}>{r.risk}</td>
-                <td style={{ padding: "12px", fontSize: 12, color: C.text }}>{r.confidence}%</td>
-                <td style={{ padding: "12px", fontSize: 12, fontWeight: 700, color: r.tier >= 3 ? C.critical : C.high }}>T{r.tier} ({getTierLabel(r.tier)})</td>
-                <td style={{ padding: "12px" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: r.escalated ? C.critical : C.success, padding: "3px 10px", background: r.escalated ? C.criticalLight : C.successLight, borderRadius: 999 }}>{r.escalated ? <><Icons.AlertTriangle /> YES</> : <><Icons.CheckCircle /> NO</>}</span>
-                </td>
-              </tr>
-            ))}
+            {logsToUse.map(r => {
+              const objId = r.id || r.disruption_id?.slice(0, 8);
+              const ts = r.created_at ? new Date(r.created_at).toLocaleString() : r.ts;
+
+              const supplier = r.disruptions?.supplier || r.supplier || "-";
+              const region = r.disruptions?.region || r.region || "-";
+              const risk = r.disruptions?.risk_score || r.risk || 0;
+              const confidence = r.disruptions?.confidence_score || r.confidence || 0;
+              const tier = r.disruptions?.cost_of_delay_tier || r.tier || 1;
+              const escalated = r.disruptions?.escalated || r.escalated || false;
+
+              const actionName = (r.action || r.event_type || "SYSTEM LOG").replace(/_/g, " ").toUpperCase();
+
+              return (
+                <tr key={r.id} style={{ borderBottom: `1px solid #F8FAFC` }}>
+                  <td style={{ padding: "12px", fontSize: 12, fontWeight: 600, color: C.brand, fontFamily: "monospace" }}>{objId.toString().slice(0, 8)}</td>
+                  <td style={{ padding: "12px", fontSize: 12, color: C.textMid }}>{ts}</td>
+                  <td style={{ padding: "12px", fontSize: 11, fontWeight: 700, color: C.accent }}>{actionName}</td>
+                  <td style={{ padding: "12px", fontSize: 12, color: C.text }}>{supplier}</td>
+                  <td style={{ padding: "12px", fontSize: 12, color: C.textMid }}>{region}</td>
+                  <td style={{ padding: "12px", fontSize: 13, fontWeight: 800, color: getRiskColor(risk), fontFamily: "'Fira Code',sans-serif" }}>{risk}</td>
+                  <td style={{ padding: "12px", fontSize: 12, color: C.text }}>{confidence}%</td>
+                  <td style={{ padding: "12px", fontSize: 12, fontWeight: 700, color: tier >= 3 ? C.critical : C.high }}>T{tier} ({getTierLabel(tier)})</td>
+                  <td style={{ padding: "12px" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: escalated ? C.critical : C.success, padding: "3px 10px", background: escalated ? C.criticalLight : C.successLight, borderRadius: 999 }}>{escalated ? <><Icons.AlertTriangle /> YES</> : <><Icons.CheckCircle /> NO</>}</span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── SETTINGS PAGE ────────────────────────────────────────────────────────────
+function SettingsPage({ currentProfile, setCurrentProfile }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    setDraft(JSON.stringify(currentProfile, null, 2));
+  }, [currentProfile, editing]);
+
+  const handleSave = () => {
+    try {
+      const parsed = JSON.parse(draft);
+      setCurrentProfile(parsed);
+      setEditing(false);
+    } catch (e) {
+      alert("Invalid JSON format. Please correct it before saving.");
+    }
+  };
+
+  return (
+    <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 800 }}>
+      <div style={{ background: "white", borderRadius: 12, padding: "24px", border: `1px solid ${C.border}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Manufacturer Context Profile</div>
+            <div style={{ fontSize: 12, color: C.textMid, marginTop: 4 }}>This JSON context grounds the AI risk engine's logic (Hyper-Personalization).</div>
+          </div>
+          {!editing ? (
+            <button onClick={() => setEditing(true)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: "white", color: C.text, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Edit JSON</button>
+          ) : (
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => { setEditing(false); setDraft(JSON.stringify(currentProfile, null, 2)); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: "white", color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleSave} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Save Profile</button>
+            </div>
+          )}
+        </div>
+
+        {editing ? (
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            style={{ width: "100%", height: 350, padding: "16px", borderRadius: 8, border: `1px solid ${C.brandMid}`, background: "#FAFBFC", fontFamily: "monospace", fontSize: 12, color: C.text, resize: "vertical", outline: "none" }}
+          />
+        ) : (
+          <div style={{ width: "100%", height: 350, overflowY: "auto", padding: "16px", borderRadius: 8, border: `1px solid ${C.border}`, background: "#FAFBFC", fontFamily: "monospace", fontSize: 12, color: C.text, whiteSpace: "pre-wrap" }}>
+            {JSON.stringify(currentProfile, null, 2)}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -950,19 +1112,26 @@ export default function NexusApp() {
   // Real data state
   const [globalAlerts, setGlobalAlerts] = useState([]);
   const [globalSuppliers, setGlobalSuppliers] = useState([]);
+  const [globalAuditLogs, setGlobalAuditLogs] = useState([]);
+  const [currentProfile, setCurrentProfile] = useState(MANUFACTURER);
   const [loading, setLoading] = useState(true);
 
   // Fetch from supabase logic
   useEffect(() => {
     async function loadData() {
       // getDisruptionHistory returns recently created disruptions from db
-      const [data, suppliersData] = await Promise.all([
+      const [data, suppliersData, auditData] = await Promise.all([
         getDisruptionHistory(50),
-        getSuppliers()
+        getSuppliers(),
+        getAuditLogs(100)
       ]);
 
       if (suppliersData && suppliersData.length > 0) {
         setGlobalSuppliers(suppliersData);
+      }
+
+      if (auditData && auditData.length > 0) {
+        setGlobalAuditLogs(auditData);
       }
 
       // map the db fields back to the structure the UI mock expects
@@ -1013,6 +1182,7 @@ export default function NexusApp() {
     playbook: { title: "Playbook Library", subtitle: "Historical mitigations and outcomes" },
     suppliers: { title: "Supplier Risk Map", subtitle: "Global supplier exposure overview" },
     audit: { title: "Audit Log", subtitle: "Immutable governance record · HITL override tracking" },
+    settings: { title: "Settings & Context", subtitle: "Manage your AI context and hyper-personalization parameters" },
   };
 
   const meta = PAGE_META[page] || { title: "NEXUS", subtitle: "" };
@@ -1046,7 +1216,8 @@ export default function NexusApp() {
               {page === "analysis" && <AnalysisPage focusAlert={focusAlert} globalAlerts={globalAlerts} />}
               {page === "playbook" && <PlaybookPage globalAlerts={globalAlerts} />}
               {page === "suppliers" && <SuppliersPage globalSuppliers={globalSuppliers} />}
-              {page === "audit" && <AuditPage />}
+              {page === "audit" && <AuditPage globalAuditLogs={globalAuditLogs} />}
+              {page === "settings" && <SettingsPage currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} />}
             </div>
           )}
         </div>
