@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs } from "./src/services/supabaseService";
-import { getSupplierFinancialHealth } from "./src/services/yahooFinanceService";
+import { getSupplierFinancialHealth } from "./src/services/financialHealthService";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
