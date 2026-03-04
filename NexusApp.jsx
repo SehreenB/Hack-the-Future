@@ -106,6 +106,37 @@ const SUPPLIER_MAP_PINS = [
   { id: "SUP-003", name: "BASF", lat: 28.98, lng: -95.37, risk: 54, commodity: "Polymers", status: "medium" },
   { id: "SUP-004", name: "Murata", lat: 35.01, lng: 135.77, risk: 28, commodity: "Passives", status: "low" },
   { id: "SUP-005", name: "Flex Ltd", lat: 20.66, lng: -103.35, risk: 22, commodity: "Assembly", status: "low" },
+
+  // Simulated WorldMonitor Global Impacts
+  { id: "IMP-001", name: "Sahel Insurgency", lat: 14.0, lng: -1.0, risk: 85, commodity: "Minerals", status: "critical" },
+  { id: "IMP-002", name: "Haiti Crisis", lat: 18.5, lng: -72.3, risk: 78, commodity: "Logistics", status: "high" },
+  { id: "IMP-003", name: "Horn of Africa", lat: 10.0, lng: 49.0, risk: 92, commodity: "Shipping", status: "critical" },
+  { id: "IMP-004", name: "DC Intel", lat: 38.9, lng: -77.0, risk: 45, commodity: "Data", status: "medium" },
+  { id: "IMP-005", name: "Silicon Valley", lat: 37.4, lng: -122.1, risk: 36, commodity: "AI / Tech", status: "medium" },
+  { id: "IMP-006", name: "Wall Street", lat: 40.7, lng: -74.0, risk: 32, commodity: "Finance", status: "medium" },
+  { id: "IMP-007", name: "Houston Energy", lat: 29.76, lng: -95.37, risk: 40, commodity: "Oil & Gas", status: "medium" },
+  { id: "IMP-008", name: "Kremlin Activity", lat: 55.75, lng: 37.6, risk: 88, commodity: "Geopolitics", status: "critical" },
+  { id: "IMP-009", name: "Beijing PLA", lat: 39.9, lng: 116.4, risk: 80, commodity: "Geopolitics", status: "critical" },
+  { id: "IMP-010", name: "Ukraine War", lat: 50.45, lng: 30.5, risk: 95, commodity: "Agriculture/Energy", status: "critical" },
+  { id: "IMP-011", name: "Taipei Tensions", lat: 25.03, lng: 121.5, risk: 75, commodity: "Semiconductors", status: "high" },
+  { id: "IMP-012", name: "Tehran IRGC", lat: 35.7, lng: 51.4, risk: 82, commodity: "Oil/Logistics", status: "critical" },
+  { id: "IMP-013", name: "Tel Aviv Conflict", lat: 32.1, lng: 34.8, risk: 90, commodity: "Defense/Tech", status: "critical" },
+  { id: "IMP-014", name: "Pyongyang Tests", lat: 39.0, lng: 125.75, risk: 70, commodity: "Geopolitics", status: "high" },
+  { id: "IMP-015", name: "London GCHQ", lat: 51.5, lng: -0.12, risk: 20, commodity: "Intel", status: "low" },
+  { id: "IMP-016", name: "Brussels NATO", lat: 50.85, lng: 4.35, risk: 25, commodity: "Defense", status: "low" },
+  { id: "IMP-017", name: "Caracas Crisis", lat: 10.5, lng: -66.9, risk: 65, commodity: "Oil", status: "high" },
+  { id: "IMP-018", name: "Mexico Cartels", lat: 23.6, lng: -102.5, risk: 78, commodity: "Manufacturing", status: "high" },
+  { id: "IMP-019", name: "Strait of Hormuz", lat: 26.2, lng: 56.5, risk: 96, commodity: "Oil Transit", status: "critical" },
+  { id: "IMP-020", name: "Gaza Blockade", lat: 31.5, lng: 34.5, risk: 93, commodity: "Humanitarian", status: "critical" },
+  { id: "IMP-021", name: "South Lebanon", lat: 33.2, lng: 35.4, risk: 85, commodity: "Logistics", status: "critical" },
+  { id: "IMP-022", name: "Red Sea Crisis", lat: 14.0, lng: 43.0, risk: 94, commodity: "Global Shipping", status: "critical" },
+  { id: "IMP-023", name: "Sudan Civil War", lat: 15.0, lng: 32.0, risk: 89, commodity: "Logistics", status: "critical" },
+  { id: "IMP-024", name: "Myanmar Conflict", lat: 20.0, lng: 96.5, risk: 76, commodity: "Manufacturing", status: "high" },
+  { id: "IMP-025", name: "Malacca Strait", lat: 2.5, lng: 101.5, risk: 45, commodity: "Shipping", status: "medium" },
+  { id: "IMP-026", name: "Bosphorus Strait", lat: 41.1, lng: 29.0, risk: 38, commodity: "Shipping", status: "medium" },
+  { id: "IMP-027", name: "Suez Canal", lat: 30.5, lng: 32.3, risk: 55, commodity: "Shipping", status: "medium" },
+  { id: "IMP-028", name: "Panama Canal Drought", lat: 9.1, lng: -79.7, risk: 65, commodity: "Shipping", status: "high" },
+  { id: "IMP-029", name: "Bab el-Mandeb", lat: 12.5, lng: 43.3, risk: 90, commodity: "Shipping", status: "critical" }
 ];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
