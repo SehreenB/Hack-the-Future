@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs } from "./src/services/supabaseService";
+import { getSupplierFinancialHealth } from "./src/services/yahooFinanceService";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
@@ -492,12 +493,32 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
   const [erpStatus, setErpStatus] = useState("pending");
   const [emailSending, setEmailSending] = useState(false);
 
+  const [supplierHealth, setSupplierHealth] = useState(null);
+
   // Re-sync if globalAlerts updates
   useEffect(() => {
     if (alertsToUse.length > 0 && !alertsToUse.find(a => a.id === selected?.id)) {
       setSelected(alertsToUse[0]);
     }
   }, [globalAlerts, selected]);
+
+  useEffect(() => {
+    async function fetchHealth() {
+      if (!selected) return;
+      setSupplierHealth(null);
+      // Look up ticker from manufacturer profile based on the selected alert's supplier string
+      // Just naively grep the profile for the ticker - simple proxy for demonstration
+      let ticker = "TSM";
+      if (selected.supplier.toLowerCase().includes("foxconn") || selected.supplier.toLowerCase().includes("hon hai")) ticker = "2317.TW";
+      if (selected.supplier.toLowerCase().includes("samsung")) ticker = "005930.KS";
+      if (selected.supplier.toLowerCase().includes("bayer")) ticker = "BAYN.DE";
+      if (selected.supplier.toLowerCase().includes("basf")) ticker = "BASFY";
+
+      const health = await getSupplierFinancialHealth(ticker);
+      setSupplierHealth(health);
+    }
+    fetchHealth();
+  }, [selected]);
 
   // Handle action approval/dismissal (L2 Autonomy Gate)
   const handleAction = async (type, action) => {
@@ -545,6 +566,25 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
 
   const activePlaybook = selected.playbook && selected.playbook.length > 0 ? selected.playbook : PLAYBOOK;
 
+  const baseReasoning = [
+    "01 SENSE: GNews signal ingested. Reuters-sourced article. Credibility: 88%. GDELT tone: -8.4 (Critical).",
+    "02 CLASSIFY: TSMC & Hon Hai matched in supplier registry. BOM intersection: SKU-4421, SKU-4422 → 34% of active BOM.",
+    "03 PROBABILITY: P=78% — Event severity (88) + Historical similarity 2022 exercises (72) + Source credibility (90).",
+    "04 RISK SCORE: 78 × 4.2 × 3 = normalized 87/100. Time multiplier=3 (8 days to stockout < 10-day threshold).",
+    "05 IMPACT: Revenue-at-Risk = $280K/day × 15d = $4.2M. Open POs affected: PO-8821 + PO-8834 = $1.84M.",
+    "06 SCENARIOS: Base (14d/$1.8M), Stress (+20%: 17d/$2.2M), Shock (+50%: 21d/$3.1M).",
+    "07 PLAYBOOK: 3 options ranked by (Risk Reduction ÷ Cost) × Feasibility. #1: Alternate Supplier (composite 88).",
+    "08 CRITIC: Forced demand-shaping alt. Flagged air freight cash flow risk. Confirmed escalation validity.",
+    "09 DRAFT: Supplier email generated. Status: AWAITING_APPROVAL. ERP flag: SIMULATED_ONLY.",
+    "10 ESCALATION: Risk 87>65 ✓, Confidence 91%>70% ✓, FP Rate 12%<20% ✓ → Triggered to SMS + Dashboard.",
+    "11 LOG: Analysis recorded. Audit trail updated. Memory store patched.",
+  ];
+
+  // Inject Yahoo Finance logic trace dynamically if health data exists
+  if (supplierHealth) {
+    baseReasoning.splice(4, 0, `04.b FINANCIAL HEALTH: ${supplierHealth.ticker} risk assessed. Insolvency Risk: ${supplierHealth.insolvencyRiskScore}/100. (+${Math.round(supplierHealth.insolvencyRiskScore / 10)} to base risk).`);
+  }
+
   const mockResult = {
     scenarios: {
       baseCase: { delay: "14d", cost: "+$85K", rev: "-$1.8M", svc: "72%" },
@@ -557,20 +597,14 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
       overlooked: "Samsung Foundry capacity may be constrained industry-wide.",
       validity: "Escalation valid: All 3 thresholds met (Risk 87>65, Confidence 91%>70%, FP 12%<20%).",
     },
-    reasoning: [
-      "01 SENSE: GNews signal ingested. Reuters-sourced article. Credibility: 88%. GDELT tone: -8.4 (Critical).",
-      "02 CLASSIFY: TSMC & Hon Hai matched in supplier registry. BOM intersection: SKU-4421, SKU-4422 → 34% of active BOM.",
-      "03 PROBABILITY: P=78% — Event severity (88) + Historical similarity 2022 exercises (72) + Source credibility (90).",
-      "04 RISK SCORE: 78 × 4.2 × 3 = normalized 87/100. Time multiplier=3 (8 days to stockout < 10-day threshold).",
-      "05 IMPACT: Revenue-at-Risk = $280K/day × 15d = $4.2M. Open POs affected: PO-8821 + PO-8834 = $1.84M.",
-      "06 SCENARIOS: Base (14d/$1.8M), Stress (+20%: 17d/$2.2M), Shock (+50%: 21d/$3.1M).",
-      "07 PLAYBOOK: 3 options ranked by (Risk Reduction ÷ Cost) × Feasibility. #1: Alternate Supplier (composite 88).",
-      "08 CRITIC: Forced demand-shaping alt. Flagged air freight cash flow risk. Confirmed escalation validity.",
-      "09 DRAFT: Supplier email generated. Status: AWAITING_APPROVAL. ERP flag: SIMULATED_ONLY.",
-      "10 ESCALATION: Risk 87>65 ✓, Confidence 91%>70% ✓, FP Rate 12%<20% ✓ → Triggered to SMS + Dashboard.",
-      "11 LOG: Analysis recorded. Audit trail updated. Memory store patched.",
-    ],
+    reasoning: baseReasoning,
   };
+
+  // Adjust risk score visually based on yahoo finance health
+  let adjustedRiskScore = selected.riskScore;
+  if (supplierHealth && supplierHealth.insolvencyRiskScore > 0) {
+    adjustedRiskScore = Math.min(100, selected.riskScore + Math.round(supplierHealth.insolvencyRiskScore / 10));
+  }
 
   return (
     <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
@@ -606,7 +640,7 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
             <div style={{ fontSize: 13, color: C.textMid }}>{selected.supplier} · {selected.region} · {selected.commodity}</div>
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <RiskGauge score={selected.riskScore} size={100} />
+            <RiskGauge score={adjustedRiskScore} size={100} />
             <div style={{ background: selected.escalate ? C.criticalLight : C.successLight, border: `1px solid ${selected.escalate ? C.criticalBorder : C.successLight}`, borderRadius: 10, padding: "12px 18px", textAlign: "center" }}>
               <div style={{ color: selected.escalate ? C.critical : C.success, display: "flex", justifyContent: "center", marginBottom: 6 }}>
                 {selected.escalate ? <Icons.AlertTriangle /> : <Icons.CheckCircle />}
@@ -633,6 +667,36 @@ function AnalysisPage({ focusAlert, globalAlerts }) {
           </div>
         ))}
       </div>
+
+      {/* Supplier Financial Health */}
+      {supplierHealth && (
+        <div style={{ background: "white", borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginBottom: 18, animation: "fadeUp 0.3s ease" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Supplier Financial Health (API)</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "white", background: supplierHealth.insolvencyRiskScore > 35 ? C.critical : C.success, padding: "4px 10px", borderRadius: 6, letterSpacing: "0.05em" }}>
+              {supplierHealth.insolvencyRiskLevel.toUpperCase()} RISK
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+            <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Ticker</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.ticker}</div>
+            </div>
+            <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Insolvency Score</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.insolvencyRiskScore > 35 ? C.critical : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.insolvencyRiskScore}/100</div>
+            </div>
+            <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Debt-to-Equity</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.debtToEquity > 1.5 ? C.high : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.debtToEquity}</div>
+            </div>
+            <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Current Ratio</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.currentRatio < 1.2 ? C.high : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.currentRatio}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Scenarios */}
       <div style={{ background: "white", borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginBottom: 18 }}>
