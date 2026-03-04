@@ -273,8 +273,9 @@ if (urlParams.get('settings') === '1') {
 } else {
   // Determine route based on pathname
   const isActionCenter = window.location.pathname === '/';
+  const isNexus = window.location.pathname === '/nexus';
 
-  if (isActionCenter) {
+  if (isActionCenter || isNexus) {
     // Hide WorldMonitor shell
     const appEl = document.getElementById('app');
     const panelEl = document.getElementById('country-deep-dive-panel');
@@ -286,11 +287,22 @@ if (urlParams.get('settings') === '1') {
     reactRoot.id = 'sc-c2-root';
     document.body.appendChild(reactRoot);
 
-    createRoot(reactRoot).render(
-      <React.StrictMode>
-        <CommandCenter />
-      </React.StrictMode>
-    );
+    if (isActionCenter) {
+      createRoot(reactRoot).render(
+        <React.StrictMode>
+          <CommandCenter />
+        </React.StrictMode>
+      );
+    } else {
+      import('../NexusApp.jsx').then((mod) => {
+        const NexusApp = mod.default;
+        createRoot(reactRoot).render(
+          <React.StrictMode>
+            <NexusApp />
+          </React.StrictMode>
+        );
+      });
+    }
 
     clearChunkReloadGuard(chunkReloadStorageKey);
   } else {
