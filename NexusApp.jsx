@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { getDisruptionHistory, subscribeToDisruptions, getSuppliers } from "./src/services/supabaseService";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
@@ -141,15 +142,22 @@ const Icons = {
 };
 
 // ─── ALERT WIDGET (Grammarly-style) ───────────────────────────────────────────
-function AlertWidget({ onViewDashboard }) {
+function AlertWidget({ onViewDashboard, globalAlerts }) {
+  const alertsToUse = globalAlerts && globalAlerts.length > 0 ? globalAlerts : ACTIVE_ALERTS;
   const [expanded, setExpanded] = useState(false);
-  const [active, setActive] = useState(ACTIVE_ALERTS[0]);
+  const [active, setActive] = useState(alertsToUse[0]);
   const [pulse, setPulse] = useState(true);
   const [dismissed, setDismissed] = useState(false);
 
-  if (dismissed) return null;
-  const cfg = SEV_CFG[active.severity];
-  const critCount = ACTIVE_ALERTS.filter(a => a.severity === "critical").length;
+  useEffect(() => {
+    if (alertsToUse.length > 0 && !alertsToUse.find(a => a.id === active?.id)) {
+      setActive(alertsToUse[0]);
+    }
+  }, [globalAlerts]);
+
+  if (dismissed || !active) return null;
+  const cfg = SEV_CFG[active.severity] || SEV_CFG.medium;
+  const critCount = alertsToUse.filter(a => a.severity === "critical").length;
 
   return (
     <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", fontFamily: "'DM Sans',system-ui,sans-serif" }}>
@@ -162,7 +170,7 @@ function AlertWidget({ onViewDashboard }) {
             {pulse && <span style={{ position: "absolute", inset: -4, borderRadius: "50%", background: cfg.color + "40", animation: "pingAnim 1.6s ease-out infinite" }} />}
           </span>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{critCount} Critical Alert{critCount !== 1 ? "s" : ""} Detected</span>
-          <span style={{ width: 22, height: 22, borderRadius: "50%", background: cfg.color, color: "white", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{ACTIVE_ALERTS.length}</span>
+          <span style={{ width: 22, height: 22, borderRadius: "50%", background: cfg.color, color: "white", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{alertsToUse.length}</span>
         </button>
       )}
 
@@ -182,15 +190,15 @@ function AlertWidget({ onViewDashboard }) {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 999, background: SEV_CFG[active.severity].color + "15", color: SEV_CFG[active.severity].color }}>{ACTIVE_ALERTS.length} Active</span>
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 999, background: cfg.color + "15", color: cfg.color }}>{alertsToUse.length} Active</span>
               <button onClick={() => setExpanded(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight, fontSize: 15, lineHeight: 1, padding: 3 }}>✕</button>
             </div>
           </div>
 
           {/* Alert list */}
           <div style={{ borderBottom: "1px solid #F1F5F9", maxHeight: 160, overflowY: "auto" }}>
-            {ACTIVE_ALERTS.map(a => {
-              const c = SEV_CFG[a.severity];
+            {alertsToUse.map(a => {
+              const c = SEV_CFG[a.severity] || SEV_CFG.medium;
               const isActive = active.id === a.id;
               return (
                 <button key={a.id} onClick={() => setActive(a)}
@@ -207,17 +215,17 @@ function AlertWidget({ onViewDashboard }) {
           </div>
 
           {/* Active detail */}
-          <div style={{ margin: "12px", borderRadius: 10, padding: "13px 15px", background: SEV_CFG[active.severity].bg, border: `1px solid ${SEV_CFG[active.severity].border}` }}>
+          <div style={{ margin: "12px", borderRadius: 10, padding: "13px 15px", background: cfg.bg, border: `1px solid ${cfg.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 3 }}>{active.title}</div>
                 <div style={{ fontSize: 11, color: C.textMid }}>{active.supplier} · {active.region}</div>
               </div>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: SEV_CFG[active.severity].color, color: "white", fontSize: 16, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 10, fontFamily: "'Sora',sans-serif" }}>{active.riskScore}</div>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: cfg.color, color: "white", fontSize: 16, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 10, fontFamily: "'Sora',sans-serif" }}>{active.riskScore}</div>
             </div>
             <p style={{ fontSize: 12, color: C.textMid, lineHeight: 1.6, margin: "8px 0 12px" }}>{active.summary.slice(0, 160)}...</p>
             <div style={{ display: "flex", gap: 18 }}>
-              {[["Revenue at Risk", active.revenueAtRisk, SEV_CFG[active.severity].color], ["Confidence", `${active.confidenceScore}%`, C.text], ["Days to Stockout", `${active.daysToStockout}d`, active.daysToStockout < 10 ? C.critical : C.high]].map(([l, v, c]) => (
+              {[["Revenue at Risk", active.revenueAtRisk, cfg.color], ["Confidence", `${active.confidenceScore}%`, C.text], ["Days to Stockout", `${active.daysToStockout}d`, active.daysToStockout < 10 ? C.critical : C.high]].map(([l, v, c]) => (
                 <div key={l}><div style={{ fontSize: 10, color: C.textLight, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{l}</div><div style={{ fontSize: 13, fontWeight: 700, color: c, fontFamily: "'Sora',sans-serif" }}>{v}</div></div>
               ))}
             </div>
@@ -227,7 +235,7 @@ function AlertWidget({ onViewDashboard }) {
           <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderTop: "1px solid #F1F5F9" }}>
             <button onClick={() => setDismissed(true)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1px solid #E2E8F0", background: "white", color: C.textMid, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Dismiss</button>
             <button onClick={() => { onViewDashboard(active); setExpanded(false); }}
-              style={{ flex: 2, padding: "9px 14px", borderRadius: 8, border: "none", background: SEV_CFG[active.severity].color, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+              style={{ flex: 2, padding: "9px 14px", borderRadius: 8, border: "none", background: cfg.color, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
               View Full Analysis →
             </button>
           </div>
@@ -324,7 +332,8 @@ function Topbar({ title, subtitle }) {
 }
 
 // ─── LIVE MONITOR PAGE ────────────────────────────────────────────────────────
-function MonitorPage({ onAnalyze }) {
+function MonitorPage({ onAnalyze, globalAlerts }) {
+  const alertsToUse = globalAlerts && globalAlerts.length > 0 ? globalAlerts : ACTIVE_ALERTS;
   const [analyzing, setAnalyzing] = useState(false);
   const [status, setStatus] = useState("");
 
@@ -345,7 +354,7 @@ function MonitorPage({ onAnalyze }) {
       {/* KPI row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
         {[
-          { label: "Active Disruptions", value: "3", sub: "↑ 2 from last 24h", color: C.critical },
+          { label: "Active Disruptions", value: String(alertsToUse.length), sub: "↑ from last 24h", color: C.critical },
           { label: "Revenue at Risk", value: "$6.6M", sub: "Across all active alerts", color: C.high },
           { label: "Critical Suppliers", value: "2", sub: "< 10 days stockout", color: C.critical },
           { label: "Avg Confidence", value: "84%", sub: "Above escalation threshold", color: C.success },
@@ -371,8 +380,8 @@ function MonitorPage({ onAnalyze }) {
       <div style={{ marginBottom: 22 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.01em" }}>Active Disruption Signals</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {ACTIVE_ALERTS.map(a => {
-            const cfg = SEV_CFG[a.severity];
+          {alertsToUse.map(a => {
+            const cfg = SEV_CFG[a.severity] || SEV_CFG.medium;
             return (
               <div key={a.id} style={{ background: "white", borderRadius: 12, border: `1px solid ${C.border}`, overflow: "hidden", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
                 <div style={{ display: "flex", alignItems: "stretch" }}>
@@ -391,7 +400,15 @@ function MonitorPage({ onAnalyze }) {
                         </div>
                         <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 4, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.01em" }}>{a.title}</div>
                         <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10 }}>{a.supplier} · {a.region} · {a.commodity}</div>
-                        <p style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, margin: 0 }}>{a.summary}</p>
+                        <p style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, margin: 0, marginBottom: 12 }}>{a.summary}</p>
+
+                        {/* Reasoning Trace snippet */}
+                        <div style={{ background: "#F8FAFC", padding: "10px 14px", borderRadius: 8, border: `1px dashed ${C.border}`, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5 }}>
+                          <div style={{ fontWeight: 700, color: C.text, marginBottom: 4 }}>[AI Reasoning Trace]</div>
+                          <div>{`> SENSE: Signal detected for ${a.supplier} in ${a.region}.`}</div>
+                          <div>{`> SCORE: Risk mapped to ${a.commodity} (Confidence: ${a.confidenceScore}%).`}</div>
+                          <div>{`> IMPACT: ${a.revenueAtRisk} Revenue at Risk. CoD Tier ${a.costOfDelayTier}.`}</div>
+                        </div>
                       </div>
 
                       {/* Right metrics */}
@@ -455,11 +472,25 @@ function MonitorPage({ onAnalyze }) {
 }
 
 // ─── RISK ANALYSIS PAGE ───────────────────────────────────────────────────────
-function AnalysisPage({ focusAlert }) {
-  const [selected, setSelected] = useState(focusAlert || ACTIVE_ALERTS[0]);
+function AnalysisPage({ focusAlert, globalAlerts }) {
+  const alertsToUse = globalAlerts && globalAlerts.length > 0 ? globalAlerts : ACTIVE_ALERTS;
+  const initialAlert = alertsToUse.find(a => a.id === focusAlert?.id) || alertsToUse[0];
+
+  const [selected, setSelected] = useState(initialAlert);
   const [emailApproved, setEmailApproved] = useState(false);
   const [erpAcknowledged, setErpAcknowledged] = useState(false);
-  const cfg = SEV_CFG[selected.severity];
+
+  // Re-sync if globalAlerts updates
+  useEffect(() => {
+    if (alertsToUse.length > 0 && !alertsToUse.find(a => a.id === selected?.id)) {
+      setSelected(alertsToUse[0]);
+    }
+  }, [globalAlerts, selected]);
+
+  if (!selected) return null;
+  const cfg = SEV_CFG[selected.severity] || SEV_CFG.medium;
+
+  const activePlaybook = selected.playbook && selected.playbook.length > 0 ? selected.playbook : PLAYBOOK;
 
   const mockResult = {
     scenarios: {
@@ -493,8 +524,8 @@ function AnalysisPage({ focusAlert }) {
 
       {/* Alert selector */}
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        {ACTIVE_ALERTS.map(a => {
-          const c = SEV_CFG[a.severity];
+        {alertsToUse.map(a => {
+          const c = SEV_CFG[a.severity] || SEV_CFG.medium;
           const isActive = selected.id === a.id;
           return (
             <button key={a.id} onClick={() => { setSelected(a); setEmailApproved(false); setErpAcknowledged(false); }}
@@ -577,16 +608,16 @@ function AnalysisPage({ focusAlert }) {
       <div style={{ background: "white", borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginBottom: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Ranked Mitigation Playbook</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {PLAYBOOK.map(p => (
-            <div key={p.rank} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "#FAFBFC", borderRadius: 10, border: `1px solid ${C.border}` }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: p.rank === 1 ? C.brand : p.rank === 2 ? C.high : "#94A3B8", color: "white", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>#{p.rank}</div>
+          {activePlaybook.map((p, i) => (
+            <div key={p.rank || i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "#FAFBFC", borderRadius: 10, border: `1px solid ${C.border}` }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: (p.rank || i + 1) === 1 ? C.brand : (p.rank || i + 1) === 2 ? C.high : "#94A3B8", color: "white", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>#{p.rank || i + 1}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2 }}>{p.action}</div>
                 <div style={{ fontSize: 12, color: C.textMid }}>{p.description}</div>
-                <div style={{ fontSize: 11, color: C.textLight, marginTop: 4, fontStyle: "italic" }}>Trade-off: {p.tradeOff}</div>
+                <div style={{ fontSize: 11, color: C.textLight, marginTop: 4, fontStyle: "italic" }}>Trade-off: {p.tradeOff || p.tradeoff}</div>
               </div>
               <div style={{ display: "flex", gap: 18, flexShrink: 0 }}>
-                {[["Cost", p.cost], ["Time", p.time], ["Risk ↓", `${p.reduction}%`], ["Feasibility", `${p.feasibility}%`]].map(([k, v]) => (
+                {[["Cost", p.cost || "-"], ["Time", p.time || "-"], ["Risk ↓", `${p.reduction || 0}%`], ["Feasibility", `${p.feasibility || 0}%`]].map(([k, v]) => (
                   <div key={k} style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 10, color: C.textLight }}>{k}</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: k === "Risk ↓" ? C.success : C.text, fontFamily: "'Sora',sans-serif" }}>{v}</div>
@@ -596,9 +627,9 @@ function AnalysisPage({ focusAlert }) {
               <div style={{ width: 60, flexShrink: 0 }}>
                 <div style={{ fontSize: 9, color: C.textLight, marginBottom: 4 }}>COMPOSITE</div>
                 <div style={{ height: 4, background: "#E2E8F0", borderRadius: 999, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${p.composite}%`, background: p.rank === 1 ? C.brand : C.accent, borderRadius: 999 }} />
+                  <div style={{ height: "100%", width: `${p.composite || p.feasibility || 0}%`, background: (p.rank || i + 1) === 1 ? C.brand : C.accent, borderRadius: 999 }} />
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginTop: 3, fontFamily: "'Sora',sans-serif" }}>{p.composite}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginTop: 3, fontFamily: "'Sora',sans-serif" }}>{p.composite || p.feasibility || 0}</div>
               </div>
             </div>
           ))}
@@ -686,6 +717,188 @@ function AnalysisPage({ focusAlert }) {
   );
 }
 
+// ─── PLAYBOOK PAGE ───────────────────────────────────────────────────────────────
+function PlaybookPage({ globalAlerts }) {
+  const library = useMemo(() => {
+    // Merge playbooks from all active disruptions
+    return globalAlerts.flatMap(alert => {
+      if (!alert.playbook || !Array.isArray(alert.playbook)) return [];
+
+      // We assign a category and status for UI purposes since the JSONB might not have it
+      return alert.playbook.map((p, i) => ({
+        ...p,
+        id: `${alert.id}-pb-${i}`,
+        category: p.category || "Supplier Mitigation",
+        status: p.status || "Active",
+        action: p.action,
+        description: p.description,
+        cost: p.cost || "-",
+        time: p.time || "-",
+        composite: p.composite || p.feasibility || 0,
+        tradeOff: p.tradeOff || p.tradeoff || "None specified"
+      }));
+    });
+  }, [globalAlerts]);
+
+  // If there are no playbooks from DB yet, use the fallback mock data so the UI doesn't look empty
+  const fallbackLibrary = [
+    ...PLAYBOOK.map(p => ({ ...p, id: p.rank, category: "Sourcing", status: "Active" })),
+    { id: 4, action: "Spot Market Purchase", category: "Procurement", description: "Buy from open market brokers. High risk of counterfeit.", cost: "$80K premium", time: "5 days", reduction: 40, feasibility: 60, composite: 55, tradeOff: "High cost, quality risk.", cashFlow: "-$80K immediate", status: "Archived" },
+    { id: 5, action: "Tooling Relocation", category: "Manufacturing", description: "Move injection molds from Asia to Mexico.", cost: "$150K", time: "45 days", reduction: 90, feasibility: 75, composite: 82, tradeOff: "Long lead time, capex required.", cashFlow: "-$150K CapEx", status: "Active" },
+    { id: 6, action: "Component Substitution", category: "Engineering", description: "Qualify alternate passives from Murata.", cost: "$10K NRE", time: "21 days", reduction: 85, feasibility: 95, composite: 89, tradeOff: "Requires engineering validation.", cashFlow: "Minimal", status: "Active" }
+  ];
+
+  const displayLibrary = library.length > 0 ? library : fallbackLibrary;
+
+  return (
+    <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
+      {/* Overview stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
+        {[
+          ["Active Mitigations", String(displayLibrary.length), C.brand],
+          ["Archived Strategies", "85", C.textMid],
+          ["Avg Risk Reduction", "68%", C.success],
+          ["Simulated Outcomes", "1,204", C.text]
+        ].map(([l, v, c]) => (
+          <div key={l} style={{ flex: 1, background: "white", borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6 }}>{l}</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: c, fontFamily: "'Fira Code',sans-serif", letterSpacing: "-0.03em" }}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: "white", borderRadius: 12, padding: "20px 22px", border: `1px solid ${C.border}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Mitigation Library</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={{ padding: "6px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: "#FAFBFC", fontSize: 12, color: C.textMid, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><Icons.FileText /> Filter</button>
+            <button style={{ padding: "6px 12px", border: "none", borderRadius: 8, background: C.brand, color: "white", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>+ New Strategy</button>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {displayLibrary.map(p => (
+            <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", background: "#FAFBFC", borderRadius: 10, border: `1px solid ${C.border}` }}>
+              <div style={{ flex: 1.5 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{p.action}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: p.status === "Active" ? C.successLight : "#E2E8F0", color: p.status === "Active" ? C.success : C.textMid }}>{p.status.toUpperCase()}</span>
+                </div>
+                <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6 }}>{p.description}</div>
+                <div style={{ display: "flex", gap: 12, fontSize: 11, color: C.textLight }}>
+                  <span><strong style={{ color: C.textMid }}>Category:</strong> {p.category}</span>
+                  <span><strong style={{ color: C.textMid }}>Trade-off:</strong> {p.tradeOff}</span>
+                </div>
+
+                {/* Reasoning Trace snippet for Playbook */}
+                <div style={{ marginTop: 10, background: "white", padding: "8px 12px", borderRadius: 6, border: `1px solid ${C.border}`, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5 }}>
+                  <div style={{ fontWeight: 700, color: C.brand, marginBottom: 4, letterSpacing: "0.02em" }}>[Simulation Reasoning]</div>
+                  <div>{`> Feasibility (${p.composite} composite) evaluated against ${p.time} implementation time.`}</div>
+                  <div>{`> Expected risk reduction: ${p.reduction || 0}%. Projected cost: ${p.cost}.`}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 24, flexShrink: 0, paddingLeft: 16, borderLeft: `1px dashed ${C.border}` }}>
+                {[["Cost", p.cost], ["Time", p.time], ["Score", p.composite]].map(([k, v]) => (
+                  <div key={k} style={{ textAlign: "center", minWidth: 40 }}>
+                    <div style={{ fontSize: 10, color: C.textLight, marginBottom: 4 }}>{k}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: k === "Score" ? C.brand : C.text, fontFamily: "'Sora',sans-serif" }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div >
+  );
+}
+
+// ─── SUPPLIER MAP PAGE ────────────────────────────────────────────────────────
+function SuppliersPage({ globalSuppliers }) {
+  const pinsToUse = globalSuppliers && globalSuppliers.length > 0 ? globalSuppliers : SUPPLIER_MAP_PINS;
+
+  return (
+    <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
+      {/* Map header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Global Network Exposure</div>
+          <div style={{ fontSize: 13, color: C.textMid }}>{pinsToUse.length} active critical nodes detected across 3 continents.</div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          {["All Suppliers", "Critical Risk", "Tier 1 Only"].map((f, i) => (
+            <button key={f} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${i === 1 ? C.brand : C.border}`, background: i === 1 ? C.brandLight : "white", color: i === 1 ? C.brand : C.textMid, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{f}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mock Map Container */}
+      <div style={{ background: "#E2E8F0", borderRadius: 16, height: 480, position: "relative", overflow: "hidden", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", backgroundImage: "radial-gradient(#CBD5E1 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
+        <div style={{ position: "absolute", top: 20, left: 20, background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)", padding: "12px 16px", borderRadius: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: `1px solid ${C.border}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 8, letterSpacing: "0.05em" }}>MAP LEGEND</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {[["Critical", C.critical], ["High", C.high], ["Medium", C.medium], ["Low", C.success]].map(([l, c]) => (
+              <div key={l} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.text }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: c }} /> {l} Risk
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mock Map Background Visual */}
+        <div style={{ position: "absolute", inset: 0, opacity: 0.1, backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1000 500\"><path d=\"M200 100 Q400 50 600 200 T900 150 M100 300 Q300 400 500 250 T800 350\" stroke=\"%234C1D95\" stroke-width=\"2\" fill=\"none\"/></svg>')", backgroundSize: "cover", backgroundPosition: "center" }} />
+
+        {/* Overlay Pins */}
+        <div style={{ position: "absolute", inset: 0 }}>
+          {pinsToUse.map(pin => {
+            const riskColor = getRiskColor(pin.risk || pin.risk_score);
+            // Rough map projection for demo
+            const lat = Number(pin.lat);
+            const lng = Number(pin.lng);
+            const left = `${(lng + 180) / 360 * 100}%`;
+            const top = `${(90 - lat) / 180 * 100}%`;
+
+            return (
+              <div key={pin.id} style={{ position: "absolute", left, top, transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", background: riskColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: (pin.risk || pin.risk_score) > 75 ? "pingAnim 2s infinite" : "none" }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: riskColor, border: "2px solid white", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }} />
+                </div>
+                <div style={{ background: "white", padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: C.text, marginTop: 4, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", whiteSpace: "nowrap", border: `1px solid ${C.border}` }}>
+                  {pin.name} • {pin.risk || pin.risk_score}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Supplier List Below */}
+      <div style={{ marginTop: 20 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", background: "white", borderRadius: 12, overflow: "hidden", border: `1px solid ${C.border}` }}>
+          <thead style={{ background: "#FAFBFC" }}>
+            <tr>{["Supplier", "Commodity", "Risk Score", "Status", "Coordinates"].map(h => (
+              <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: C.textLight, textAlign: "left", letterSpacing: "0.04em", borderBottom: `1px solid ${C.border}` }}>{h}</th>
+            ))}</tr>
+          </thead>
+          <tbody>
+            {pinsToUse.map(pin => (
+              <tr key={pin.id} style={{ borderBottom: `1px solid #F1F5F9` }}>
+                <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700, color: C.text }}>{pin.name}</td>
+                <td style={{ padding: "14px 16px", fontSize: 12, color: C.textMid }}>{pin.commodity}</td>
+                <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 800, color: getRiskColor(pin.risk || pin.risk_score), fontFamily: "'Sora',sans-serif" }}>{pin.risk || pin.risk_score}</td>
+                <td style={{ padding: "14px 16px" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: getRiskColor(pin.risk || pin.risk_score) + "20", color: getRiskColor(pin.risk || pin.risk_score) }}>{(pin.status || 'unknown').toUpperCase()}</span>
+                </td>
+                <td style={{ padding: "14px 16px", fontSize: 12, color: C.textLight, fontFamily: "monospace" }}>{Number(pin.lat).toFixed(2)}, {Number(pin.lng).toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── AUDIT LOG PAGE ───────────────────────────────────────────────────────────
 function AuditPage() {
   return (
@@ -734,6 +947,63 @@ export default function NexusApp() {
   const [page, setPage] = useState("monitor");
   const [focusAlert, setFocusAlert] = useState(null);
 
+  // Real data state
+  const [globalAlerts, setGlobalAlerts] = useState([]);
+  const [globalSuppliers, setGlobalSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch from supabase logic
+  useEffect(() => {
+    async function loadData() {
+      // getDisruptionHistory returns recently created disruptions from db
+      const [data, suppliersData] = await Promise.all([
+        getDisruptionHistory(50),
+        getSuppliers()
+      ]);
+
+      if (suppliersData && suppliersData.length > 0) {
+        setGlobalSuppliers(suppliersData);
+      }
+
+      // map the db fields back to the structure the UI mock expects
+      if (data && data.length > 0) {
+        const mappedData = data.map(d => ({
+          ...d,
+          // map fields
+          id: d.signal_id || d.id,
+          severity: d.risk_score >= 75 ? 'critical' : d.risk_score >= 50 ? 'high' : 'medium',
+          riskScore: d.risk_score || 0,
+          confidenceScore: d.confidence_score || 0,
+          revenueAtRisk: d.revenue_at_risk || '-',
+          costOfDelayTier: d.cost_of_delay_tier || 1,
+          daysToStockout: d.raw_signal?.daysToStockout || 15,
+          detectedAt: new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " ago",
+          escalate: d.escalated,
+          summary: d.raw_signal?.summary || "No summary available for this disruption.",
+          openPOs: d.raw_signal?.openPOs || "Unknown",
+          bomImpact: d.raw_signal?.bomImpact || "Unknown",
+          playbook: d.playbook || []
+        }));
+        setGlobalAlerts(mappedData);
+      } else {
+        // Fallback to moc if db is totally empty so app doesnt break visually
+        setGlobalAlerts(ACTIVE_ALERTS);
+      }
+      setLoading(false);
+    }
+
+    loadData();
+
+    // Setup realtime sub just to reload if changes happen
+    const unsubPromise = subscribeToDisruptions(() => {
+      loadData();
+    });
+
+    return () => {
+      unsubPromise.then(unsub => unsub && unsub());
+    }
+  }, []);
+
   const handleViewAlert = (alert) => { setFocusAlert(alert); setPage("analysis"); };
   const handleAnalyze = (alert) => { setFocusAlert(alert); setPage("analysis"); };
 
@@ -764,22 +1034,25 @@ export default function NexusApp() {
         <Sidebar page={page} setPage={setPage} />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bg }}>
           <Topbar title={meta.title} subtitle={meta.subtitle} />
-          <div style={{ flex: 1, overflowY: "auto" }}>
-            {page === "monitor" && <MonitorPage onAnalyze={handleAnalyze} />}
-            {page === "analysis" && <AnalysisPage focusAlert={focusAlert} />}
-            {page === "audit" && <AuditPage />}
-            {["playbook", "suppliers"].includes(page) && (
-              <div style={{ padding: "80px", textAlign: "center", fontFamily: "'Fira Sans',sans-serif" }}>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, opacity: 0.25, color: C.brand }}><Icons.FileText /></div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "'Fira Code',sans-serif" }}>Coming in Full Build</div>
-                <div style={{ fontSize: 13, color: C.textLight, marginTop: 6 }}>Connect your APIs and Supabase to unlock live supplier mapping and playbook library.</div>
-              </div>
-            )}
-          </div>
+
+          {loading ? (
+            <div style={{ padding: "40px", textAlign: "center", color: C.textMid, fontFamily: "'Fira Code',sans-serif" }}>
+              Connecting to global supply network...
+            </div>
+          ) : (
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {/* the pages need globalAlerts now instead of relying directly on ACTIVE_ALERTS */}
+              {page === "monitor" && <MonitorPage onAnalyze={handleAnalyze} globalAlerts={globalAlerts} />}
+              {page === "analysis" && <AnalysisPage focusAlert={focusAlert} globalAlerts={globalAlerts} />}
+              {page === "playbook" && <PlaybookPage globalAlerts={globalAlerts} />}
+              {page === "suppliers" && <SuppliersPage globalSuppliers={globalSuppliers} />}
+              {page === "audit" && <AuditPage />}
+            </div>
+          )}
         </div>
       </div>
 
-      <AlertWidget onViewDashboard={handleViewAlert} />
+      {!loading && <AlertWidget onViewDashboard={handleViewAlert} globalAlerts={globalAlerts} />}
     </>
   );
 }

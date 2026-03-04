@@ -174,7 +174,7 @@ export async function subscribeToDisruptions(callback) {
   const client = await getClient();
   if (!client) {
     console.warn("[Supabase] Real-time not available without Supabase config.");
-    return () => {};
+    return () => { };
   }
 
   const subscription = client
@@ -227,5 +227,15 @@ export async function getDriftMetrics() {
     driftAlert: overrideRate > 25,
   };
 }
+
+export async function getSuppliers() {
+  const client = await getClient();
+  if (!client) return [];
+
+  const { data, error } = await client.from("suppliers").select("*");
+  if (error) console.error(error);
+  return data || [];
+}
+
 
 export { memoryStore };
