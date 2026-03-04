@@ -14216,12 +14216,12 @@ body.has-breaking-alert .panels-grid {
 
 .posture-expanded.critical {
   border-left: 3px solid var(--semantic-critical);
-  background: rgba(255, 68, 68, 0.1);
+  background: rgba(255, 68, 68, 0.04);
 }
 
 .posture-expanded.elevated {
   border-left: 3px solid var(--semantic-elevated);
-  background: rgba(255, 170, 0, 0.1);
+  background: rgba(255, 170, 0, 0.04);
 }
 
 .posture-theater-header {
@@ -14240,20 +14240,21 @@ body.has-breaking-alert .panels-grid {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 3px;
+  font-weight: 500;
 }
 
 .posture-critical {
-  background: rgba(var(--semantic-critical), 0.2);
+  background: rgba(255, 68, 68, 0.1);
   color: var(--semantic-critical);
 }
 
 .posture-elevated {
-  background: rgba(255, 170, 0, 0.2);
+  background: rgba(255, 170, 0, 0.1);
   color: var(--semantic-elevated);
 }
 
 .posture-normal {
-  background: rgba(68, 170, 68, 0.2);
+  background: rgba(68, 170, 68, 0.1);
   color: var(--semantic-normal);
 }
 

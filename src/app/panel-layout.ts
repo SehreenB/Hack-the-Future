@@ -29,12 +29,10 @@ import {
   UcdpEventsPanel,
   DisplacementPanel,
   ClimateAnomalyPanel,
-  PopulationExposurePanel,
   InvestmentsPanel,
   TradePolicyPanel,
   SupplyChainPanel,
   SecurityAdvisoriesPanel,
-  OrefSirensPanel,
   TelegramIntelPanel,
   GulfEconomiesPanel,
   WorldClockPanel,
@@ -604,17 +602,11 @@ export class PanelLayoutManager implements AppModule {
       });
       this.ctx.panels['climate'] = climatePanel;
 
-      const populationExposurePanel = new PopulationExposurePanel();
-      this.ctx.panels['population-exposure'] = populationExposurePanel;
-
       const securityAdvisoriesPanel = new SecurityAdvisoriesPanel();
       securityAdvisoriesPanel.setRefreshHandler(() => {
         void this.callbacks.loadSecurityAdvisories?.();
       });
       this.ctx.panels['security-advisories'] = securityAdvisoriesPanel;
-
-      const orefSirensPanel = new OrefSirensPanel();
-      this.ctx.panels['oref-sirens'] = orefSirensPanel;
 
       const telegramIntelPanel = new TelegramIntelPanel();
       this.ctx.panels['telegram-intel'] = telegramIntelPanel;

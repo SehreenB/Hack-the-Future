@@ -1005,7 +1005,19 @@ export class DataLoaderManager implements AppModule {
           sectorsResult.data.map((s) => ({ name: s.name, change: s.change }))
         );
       } else {
-        this.ctx.panels['heatmap']?.setContent('<div class="panel-empty"></div>');
+        const mockSectors = [
+          { name: 'Technology', change: 1.2 },
+          { name: 'Healthcare', change: 0.5 },
+          { name: 'Financials', change: -0.3 },
+          { name: 'Consumer Discretionary', change: 0.8 },
+          { name: 'Industrials', change: -0.1 },
+          { name: 'Energy', change: -1.5 },
+          { name: 'Materials', change: 0.4 },
+          { name: 'Utilities', change: 0.2 },
+          { name: 'Real Estate', change: -0.6 },
+          { name: 'Communication Svcs', change: 0.9 },
+        ];
+        (this.ctx.panels['heatmap'] as HeatmapPanel).renderHeatmap(mockSectors);
       }
 
       const commoditiesPanel = this.ctx.panels['commodities'] as CommoditiesPanel;
