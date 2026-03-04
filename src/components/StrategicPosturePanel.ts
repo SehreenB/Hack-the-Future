@@ -339,6 +339,8 @@ export class StrategicPosturePanel extends Panel {
     return translated !== key ? translated : p.theaterName;
   }
 
+  private activeDomain: 'air' | 'sea' = 'air';
+
   private renderTheater(p: TheaterPostureSummary): string {
     const isExpanded = p.postureLevel !== 'normal';
     const displayName = this.theaterDisplayName(p);
@@ -346,8 +348,14 @@ export class StrategicPosturePanel extends Panel {
     if (!isExpanded) {
       // Compact single-line view for normal theaters
       const chips: string[] = [];
-      if (p.totalAircraft > 0) chips.push(`<span class="posture-chip air">✈️ ${p.totalAircraft}</span>`);
-      if (p.totalVessels > 0) chips.push(`<span class="posture-chip naval">⚓ ${p.totalVessels}</span>`);
+      if (this.activeDomain === 'air') {
+        if (p.totalAircraft > 0) chips.push(`<span class="posture-chip air">Air: ${p.totalAircraft}</span>`);
+      } else {
+        if (p.totalVessels > 0) chips.push(`<span class="posture-chip naval">Sea: ${p.totalVessels}</span>`);
+      }
+      if (chips.length === 0) {
+        chips.push(`<span class="posture-chip empty">None</span>`);
+      }
 
       return `
         <div class="posture-theater posture-compact" data-lat="${p.centerLat}" data-lon="${p.centerLon}" title="${t('components.strategicPosture.clickToView', { name: escapeHtml(displayName) })}">
@@ -359,33 +367,32 @@ export class StrategicPosturePanel extends Panel {
     }
 
     // Build compact stat chips for expanded view
-    const airChips: string[] = [];
-    if (p.fighters > 0) airChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.fighters')}">✈️ ${p.fighters}</span>`);
-    if (p.tankers > 0) airChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.tankers')}">⛽ ${p.tankers}</span>`);
-    if (p.awacs > 0) airChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.awacs')}">📡 ${p.awacs}</span>`);
-    if (p.reconnaissance > 0) airChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.recon')}">🔍 ${p.reconnaissance}</span>`);
-    if (p.transport > 0) airChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.transport')}">📦 ${p.transport}</span>`);
-    if (p.bombers > 0) airChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.bombers')}">💣 ${p.bombers}</span>`);
-    if (p.drones > 0) airChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.drones')}">🛸 ${p.drones}</span>`);
-    // Fallback: show total aircraft if no typed breakdown available
-    if (airChips.length === 0 && p.totalAircraft > 0) {
-      airChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.aircraft')}">✈️ ${p.totalAircraft}</span>`);
+    const chips: string[] = [];
+
+    if (this.activeDomain === 'air') {
+      if (p.fighters > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.fighters')}">Fighters: ${p.fighters}</span>`);
+      if (p.tankers > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.tankers')}">Tankers: ${p.tankers}</span>`);
+      if (p.awacs > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.awacs')}">AWACS: ${p.awacs}</span>`);
+      if (p.reconnaissance > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.recon')}">Recon: ${p.reconnaissance}</span>`);
+      if (p.transport > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.transport')}">Transport: ${p.transport}</span>`);
+      if (p.bombers > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.bombers')}">Bombers: ${p.bombers}</span>`);
+      if (p.drones > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.drones')}">Drones: ${p.drones}</span>`);
+      if (chips.length === 0 && p.totalAircraft > 0) {
+        chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.aircraft')}">Aircraft: ${p.totalAircraft}</span>`);
+      }
+    } else {
+      if (p.carriers > 0) chips.push(`<span class="insight-badge carrier" title="${t('components.strategicPosture.units.carriers')}">Carriers: ${p.carriers}</span>`);
+      if (p.destroyers > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.destroyers')}">Destroyers: ${p.destroyers}</span>`);
+      if (p.frigates > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.frigates')}">Frigates: ${p.frigates}</span>`);
+      if (p.submarines > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.submarines')}">Submarines: ${p.submarines}</span>`);
+      if (p.patrol > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.patrol')}">Patrol: ${p.patrol}</span>`);
+      if (p.auxiliaryVessels > 0) chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.auxiliary')}">Auxiliary: ${p.auxiliaryVessels}</span>`);
+      if (chips.length === 0 && p.totalVessels > 0) {
+        chips.push(`<span class="insight-badge" title="${t('components.strategicPosture.units.navalVessels')}">Vessels: ${p.totalVessels}</span>`);
+      }
     }
 
-    const navalChips: string[] = [];
-    if (p.carriers > 0) navalChips.push(`<span class="posture-stat carrier" title="${t('components.strategicPosture.units.carriers')}">🚢 ${p.carriers}</span>`);
-    if (p.destroyers > 0) navalChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.destroyers')}">⚓ ${p.destroyers}</span>`);
-    if (p.frigates > 0) navalChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.frigates')}">🛥️ ${p.frigates}</span>`);
-    if (p.submarines > 0) navalChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.submarines')}">🦈 ${p.submarines}</span>`);
-    if (p.patrol > 0) navalChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.patrol')}">🚤 ${p.patrol}</span>`);
-    if (p.auxiliaryVessels > 0) navalChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.auxiliary')}">⚓ ${p.auxiliaryVessels}</span>`);
-    // Fallback: show total vessels if no typed breakdown available
-    if (navalChips.length === 0 && p.totalVessels > 0) {
-      navalChips.push(`<span class="posture-stat" title="${t('components.strategicPosture.units.navalVessels')}">⚓ ${p.totalVessels}</span>`);
-    }
-
-    const hasAir = airChips.length > 0;
-    const hasNaval = navalChips.length > 0;
+    const domainName = this.activeDomain === 'air' ? t('components.strategicPosture.domains.air') : t('components.strategicPosture.domains.sea');
 
     return `
       <div class="posture-theater posture-expanded ${p.postureLevel}" data-lat="${p.centerLat}" data-lon="${p.centerLon}" title="${t('components.strategicPosture.clickToViewMap')}">
@@ -395,8 +402,7 @@ export class StrategicPosturePanel extends Panel {
         </div>
 
         <div class="posture-forces">
-          ${hasAir ? `<div class="posture-force-row"><span class="posture-domain">${t('components.strategicPosture.domains.air')}</span><div class="posture-stats">${airChips.join('')}</div></div>` : ''}
-          ${hasNaval ? `<div class="posture-force-row"><span class="posture-domain">${t('components.strategicPosture.domains.sea')}</span><div class="posture-stats">${navalChips.join('')}</div></div>` : ''}
+          ${chips.length > 0 ? `<div class="posture-force-row"><div class="posture-badges-grp">${chips.join('')}</div></div>` : `<div class="posture-force-row empty"><span class="posture-badges-grp"><span class="insight-badge">No ${domainName} units</span></span></div>`}
         </div>
 
         <div class="posture-footer">
@@ -424,9 +430,17 @@ export class StrategicPosturePanel extends Panel {
       ? `<div class="posture-stale-warning">⚠️ ${t('components.strategicPosture.staleWarning')}</div>`
       : '';
 
+    const toggleHtml = `
+      <div class="posture-domain-toggle">
+        <button class="posture-toggle-btn ${this.activeDomain === 'air' ? 'active' : ''}" data-domain="air">AIR</button>
+        <button class="posture-toggle-btn ${this.activeDomain === 'sea' ? 'active' : ''}" data-domain="sea">SEA</button>
+      </div>
+    `;
+
     const html = `
       <div class="posture-panel">
         ${staleWarning}
+        ${toggleHtml}
         ${sorted.map((p) => this.renderTheater(p)).join('')}
 
         <div class="posture-footer">
@@ -441,6 +455,17 @@ export class StrategicPosturePanel extends Panel {
   }
 
   private attachEventListeners(): void {
+    const domainBtns = this.content.querySelectorAll('.posture-toggle-btn');
+    domainBtns.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const domain = (e.currentTarget as HTMLElement).dataset.domain as 'air' | 'sea';
+        if (domain && domain !== this.activeDomain) {
+          this.activeDomain = domain;
+          this.render();
+        }
+      });
+    });
+
     this.content.querySelector('.posture-refresh-btn')?.addEventListener('click', () => {
       this.refresh();
     });
