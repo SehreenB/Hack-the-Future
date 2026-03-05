@@ -68,17 +68,18 @@ export async function generateCallScriptAudio(scriptText) {
       headers: {
         "xi-api-key": ELEVENLABS_KEY,
         "Content-Type": "application/json",
+        "Accept": "audio/mpeg"
       },
       body: JSON.stringify({
         text: scriptText,
-        model_id: "eleven_monolingual_v1",
+        model_id: "eleven_multilingual_v2",
         voice_settings: { stability: 0.75, similarity_boost: 0.85 },
       }),
     });
 
-    if (!res.ok) throw new Error(`ElevenLabs error: ${res.status}`);
-    const audioBlob = await res.blob();
-    return audioBlob;
+    if (!res.ok) throw new Error(`ElevenLabs error: ${res.status} ${await res.text()}`);
+    const buffer = await res.arrayBuffer();
+    return new Blob([buffer], { type: "audio/mpeg" });
   } catch (err) {
     console.error("[ElevenLabs] Error:", err.message);
     return null;
