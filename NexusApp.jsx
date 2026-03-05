@@ -675,8 +675,8 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
   }, [selected]);
 
   const handleVoiceAction = async (action) => {
-    setVoiceStatus(action);
-    if (action === "approved") {
+    if (action === "preview") {
+      setVoiceStatus("previewing");
       setVoiceSending(true);
       setVoiceError(null);
       const scriptText = buildCallScript(selected, selected.supplier, 'an urgent supply continuity review and confirmation of alternative sourcing options');
@@ -688,27 +688,25 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
         const audio = new Audio(url);
         voiceAudioRef.current = audio;
         audio.play();
-        audio.onended = async () => {
-          setVoiceStatus("dispatched");
-          await writeAuditLog({
-            eventType: "voice_alert",
-            disruptionId: selected.id,
-            action: "audio_approved_and_played",
-            payload: { script: scriptText }
-          });
+        audio.onended = () => {
+          setVoiceStatus("previewed");
         };
       } else {
         setVoiceError("Audio unavailable — ElevenLabs key not configured. Script ready for manual delivery.");
-        setVoiceStatus("dispatched");
-        await writeAuditLog({
-          eventType: "voice_alert",
-          disruptionId: selected.id,
-          action: "audio_approved_and_played",
-          payload: { script: scriptText, note: "Manual delivery" }
-        });
+        setVoiceStatus("previewed");
       }
       setVoiceSending(false);
+    } else if (action === "approved") {
+      setVoiceStatus("dispatched");
+      const scriptText = buildCallScript(selected, selected.supplier, 'an urgent supply continuity review and confirmation of alternative sourcing options');
+      await writeAuditLog({
+        eventType: "voice_alert",
+        disruptionId: selected.id,
+        action: "audio_approved_and_dispatched",
+        payload: { script: scriptText }
+      });
     } else if (action === "dismissed") {
+      setVoiceStatus("dismissed");
       await writeAuditLog({
         eventType: "voice_alert",
         disruptionId: selected.id,
@@ -1058,8 +1056,8 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>
               AI Voice Alert <Icons.Phone />
             </div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: voiceStatus === "pending" ? C.medium : (voiceStatus === "playing" ? C.success : (voiceStatus === "dispatched" ? C.success : C.textMid)), background: voiceStatus === "pending" ? C.mediumLight : (["playing", "dispatched"].includes(voiceStatus) ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${voiceStatus === "pending" ? C.mediumBorder : (["playing", "dispatched"].includes(voiceStatus) ? C.success : C.border)} ` }}>
-              {voiceStatus === "pending" ? "⏸ AWAITING APPROVAL" : (voiceStatus === "playing" ? "▶ Playing..." : (voiceStatus === "dispatched" ? "✓ Alert Dispatched" : "DISMISSED"))}
+            <span style={{ fontSize: 10, fontWeight: 800, color: ["pending", "previewing", "previewed"].includes(voiceStatus) ? C.medium : (voiceStatus === "playing" ? C.success : (voiceStatus === "dispatched" ? C.success : C.textMid)), background: ["pending", "previewing", "previewed"].includes(voiceStatus) ? C.mediumLight : (["playing", "dispatched"].includes(voiceStatus) ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${["pending", "previewing", "previewed"].includes(voiceStatus) ? C.mediumBorder : (["playing", "dispatched"].includes(voiceStatus) ? C.success : C.border)} ` }}>
+              {["pending", "previewing"].includes(voiceStatus) ? "⏸ AWAITING PREVIEW" : (voiceStatus === "previewed" ? "⏸ AWAITING APPROVAL" : (voiceStatus === "playing" ? "▶ PLAYING..." : (voiceStatus === "dispatched" ? "✓ ALERT DISPATCHED" : "DISMISSED")))}
             </span>
           </div>
           <div style={{ background: C.bg, borderRadius: 8, padding: "12px 14px", marginBottom: 12, fontFamily: "monospace" }}>
@@ -1070,20 +1068,35 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontSize: 11, color: C.textLight }}>🔒 Human approval required before dispatch</div>
-            {voiceStatus === "pending" ? (
+            {["pending", "previewing"].includes(voiceStatus) ? (
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => handleVoiceAction("dismissed")} disabled={voiceSending}
                   style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
                   Dismiss
                 </button>
-                <button onClick={() => handleVoiceAction("approved")} disabled={voiceSending}
+                <button onClick={() => handleVoiceAction("preview")} disabled={voiceSending}
                   style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  {voiceSending ? "Generating..." : "Approve & Play Audio"}
+                  {voiceSending ? "Generating..." : "Preview Audio"}
                 </button>
               </div>
+            ) : voiceStatus === "previewed" ? (
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => handleVoiceAction("dismissed")}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  Dismiss
+                </button>
+                <button onClick={() => handleVoiceAction("approved")}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.success} `, background: C.success, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  Approve Dispatch
+                </button>
+              </div>
+            ) : voiceStatus === "playing" ? (
+              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.success} `, background: C.successLight, color: C.success, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
+                ▶ Playing...
+              </div>
             ) : (
-              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${["playing", "dispatched"].includes(voiceStatus) ? C.success : C.border} `, background: ["playing", "dispatched"].includes(voiceStatus) ? C.successLight : "#F1F5F9", color: ["playing", "dispatched"].includes(voiceStatus) ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
-                {["playing", "dispatched"].includes(voiceStatus) ? "✓ Dispatched" : "Dismissed"}
+              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${voiceStatus === "dispatched" ? C.success : C.border} `, background: voiceStatus === "dispatched" ? C.successLight : "#F1F5F9", color: voiceStatus === "dispatched" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
+                {voiceStatus === "dispatched" ? "✓ Dispatched" : "Dismissed"}
               </div>
             )}
           </div>
