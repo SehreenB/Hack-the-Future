@@ -1676,10 +1676,10 @@ function SettingsPage({ currentProfile, setCurrentProfile, systemProfiles }) {
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            style={{ width: "100%", height: 380, padding: "20px 28px", border: "none", borderBottom: `2px solid ${C.brand}`, background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.text, resize: "none", outline: "none", display: "block" }}
+            style={{ width: "100%", height: 380, padding: "20px 28px", border: "none", borderBottom: `2px solid ${C.brand}`, background: "#FFFFFF", fontFamily: "'Space Mono',monospace", fontSize: 13, color: "#114280", resize: "none", outline: "none", display: "block" }}
           />
         ) : (
-          <div style={{ width: "100%", height: 380, overflowY: "auto", padding: "20px 28px", background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.textMid, whiteSpace: "pre-wrap", borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ width: "100%", height: 380, overflowY: "auto", padding: "20px 28px", background: "#FFFFFF", fontFamily: "'Space Mono',monospace", fontSize: 13, color: "#114280", whiteSpace: "pre-wrap", borderBottom: `1px solid ${C.border}` }}>
             {JSON.stringify(currentProfile, null, 2)}
           </div>
         )}
@@ -1854,6 +1854,7 @@ export default function OsirisApp() {
               {page === "suppliers" && <SuppliersPage globalSuppliers={globalSuppliers} currentProfile={currentProfile} />}
               {page === "audit" && <AuditPage globalAuditLogs={globalAuditLogs} />}
               {page === "settings" && <SettingsPage currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} systemProfiles={systemProfiles} />}
+              <div style={{ height: 100, flexShrink: 0 }} />
             </div>
           )}
         </div>

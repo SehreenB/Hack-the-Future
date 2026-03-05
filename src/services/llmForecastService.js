@@ -38,7 +38,7 @@ Output format: Please output ONLY the summary text. No introductory or closing r
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.3, maxOutputTokens: 1200 }
+                    generationConfig: { temperature: 0.3 }
                 })
             });
 
@@ -71,8 +71,7 @@ Output format: Please output ONLY the summary text. No introductory or closing r
                 body: JSON.stringify({
                     model: "llama-3.1-8b-instant",
                     messages: [{ role: "user", content: prompt }],
-                    temperature: 0.3,
-                    max_tokens: 400
+                    temperature: 0.3
                 })
             });
 
