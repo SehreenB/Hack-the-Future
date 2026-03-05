@@ -341,6 +341,17 @@ function Sidebar({ page, setPage }) {
         ))}
       </nav>
 
+      {/* WorldMonitor Link */}
+      <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.07)", margin: "0 8px" }}>
+        <button onClick={() => window.location.href = '/world-monitor'}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans',sans-serif", transition: "all 0.12s" }}
+          onMouseOver={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)" }}
+          onMouseOut={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)" }}>
+          <span style={{ fontSize: 16 }}>🌍</span>
+          View WorldMonitor
+        </button>
+      </div>
+
       {/* Governance badge */}
       <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.07)", margin: "0 8px 12px" }}>
         <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "10px 12px", border: "1px solid rgba(255,255,255,0.08)" }}>
