@@ -30,7 +30,6 @@ Summary: ${disruption.summary}
 Output format: Please output ONLY the summary text. No introductory or closing remarks.
 `;
 
-    // 1. Try Gemini (Primary)
     if (GEMINI_API_KEY && GEMINI_API_KEY !== "your_gemini_key_here") {
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -38,7 +37,7 @@ Output format: Please output ONLY the summary text. No introductory or closing r
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.3, maxOutputTokens: 1200 }
+                    generationConfig: { temperature: 0.3 }
                 })
             });
 
@@ -71,8 +70,7 @@ Output format: Please output ONLY the summary text. No introductory or closing r
                 body: JSON.stringify({
                     model: "llama-3.1-8b-instant",
                     messages: [{ role: "user", content: prompt }],
-                    temperature: 0.3,
-                    max_tokens: 400
+                    temperature: 0.3
                 })
             });
 
@@ -85,7 +83,7 @@ Output format: Please output ONLY the summary text. No introductory or closing r
             if (data.choices && data.choices.length > 0) {
                 return {
                     forecast: data.choices[0].message.content.trim(),
-                    provider: 'claude' // User asked to call the fallback 'claude'
+                    provider: 'groq'
                 };
             }
         } catch (err) {

@@ -289,7 +289,7 @@ const Icons = {
 };
 
 // ─── ALERT WIDGET (Grammarly-style) ───────────────────────────────────────────
-function AlertWidget({ onViewDashboard, globalAlerts }) {
+function AlertWidget({ onViewDashboard, globalAlerts, chatOpen }) {
   const alertsToUse = globalAlerts && globalAlerts.length > 0 ? globalAlerts : ACTIVE_ALERTS;
   const [expanded, setExpanded] = useState(false);
   const [active, setActive] = useState(alertsToUse[0]);
@@ -307,7 +307,7 @@ function AlertWidget({ onViewDashboard, globalAlerts }) {
   const critCount = alertsToUse.filter(a => a.severity === "critical").length;
 
   return (
-    <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
+    <div style={{ position: "fixed", bottom: 28, right: chatOpen ? 348 : 28, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", fontFamily: "'Space Grotesk',system-ui,sans-serif", transition: "right 0.3s ease" }}>
 
       {/* ── COLLAPSED PILL ── */}
       {!expanded && (
@@ -529,8 +529,175 @@ function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
   );
 }
 
+// ─── ASK OSIRIS SIDEBAR ────────────────────────────────────────────────────────
+function AskOsirisSidebar({ open, selectedAlert, profile }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const endRef = useRef(null);
+
+  // Clear history and reload chips on alert change
+  useEffect(() => {
+    setMessages([]);
+    setInput("");
+  }, [selectedAlert?.id]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, thinking]);
+
+  const handleSend = async (text) => {
+    const q = text || input;
+    if (!q.trim() || thinking) return;
+    setInput("");
+
+    // Convert current history to format to show in UI right away
+    const newMsgs = [...messages, { role: "user", content: q }];
+    setMessages(newMsgs);
+    setThinking(true);
+
+    try {
+      const promptContext = `
+You are OSIRIS, an AI supply chain operations advisor. Answer questions about this specific disruption concisely and specifically. Ground all answers in the alert data and manufacturer profile provided. Never give generic advice. If asked about cost, cite specific figures from the playbook. If asked about risk, cite the exact score and reasoning. Keep responses to 3-5 sentences.
+
+Profile:
+${JSON.stringify(profile)}
+
+Alert Data:
+Title: ${selectedAlert?.title || "N/A"}
+Supplier/Region: ${selectedAlert?.supplier || "N/A"} / ${selectedAlert?.region || "N/A"}
+Risk Score: ${selectedAlert?.riskScore || selectedAlert?.risk_score || "N/A"}
+Revenue at Risk: ${selectedAlert?.revenueAtRisk || "N/A"}
+Playbook Options: ${JSON.stringify(selectedAlert?.playbook || [])}
+Summary: ${selectedAlert?.summary || "No specific alert selected. Answer general supply chain questions based on the manufacturer profile."}
+      `;
+
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+      // Formatting previous messages (last 6 context size) for Gemini API
+      // Gemini Flash expects format: { role: 'user' | 'model', parts: [{text: string}] }
+      // Using 'model' as role for AI responses to match Gemini spec
+      const contextMsgs = [...newMsgs];
+      if (contextMsgs.length > 7) {
+        contextMsgs.splice(0, contextMsgs.length - 7); // keep last 6 + 1 new msg
+      }
+
+      const historyFormatted = contextMsgs.map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }]
+      }));
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: promptContext }] },
+          contents: historyFormatted
+        })
+      });
+
+      const data = await response.json();
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        setMessages([...newMsgs, { role: "model", content: data.candidates[0].content.parts[0].text.trim() }]);
+      } else {
+        setMessages([...newMsgs, { role: "model", content: "Error: Could not reach OSIRIS core." }]);
+      }
+    } catch (e) {
+      console.error(e);
+      setMessages([...newMsgs, { role: "model", content: "Error: Connection failed." }]);
+    }
+    setThinking(false);
+  };
+
+  const chips = [
+    "What is the cheapest mitigation for this disruption?",
+    "How long until we hit stockout if we do nothing?",
+    "Which stakeholders need to be notified right now?"
+  ];
+
+  return (
+    <div style={{
+      position: "fixed", top: 96, right: open ? 0 : -320, bottom: 0, width: 320,
+      background: "#0D1C2B", borderLeft: `1px solid ${C.border}`,
+      transition: "right 0.3s ease", zIndex: 100, display: "flex", flexDirection: "column",
+      boxShadow: open ? "-4px 0 24px rgba(0,0,0,0.5)" : "none",
+      fontFamily: "'Space Grotesk',sans-serif"
+    }}>
+      <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.02)" }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: C.brand, fontFamily: "'Space Mono',monospace", letterSpacing: "0.05em" }}>Ask OSIRIS</div>
+        <div style={{ fontSize: 9, color: C.textLight, padding: "2px 6px", background: "rgba(255,255,255,0.05)", borderRadius: 4 }}>GEMINI</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 16 }}>
+        {messages.length === 0 && (
+          <div style={{ textAlign: "center", color: C.textMid, fontSize: 12, marginTop: 40, fontFamily: "'Space Mono',monospace" }}>
+            <div style={{ fontSize: 24, marginBottom: 8, color: C.brand }}>✦</div>
+            OSIRIS is online.<br /><br />
+            {selectedAlert?.id ? `Ask about ${selectedAlert.id}.` : "Ask about your supply chain."}
+          </div>
+        )}
+
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", width: "100%" }}>
+            <div style={{
+              maxWidth: "85%", padding: "12px 14px", borderRadius: 8, fontSize: 13, lineHeight: 1.5,
+              background: m.role === "user" ? "#F1F5F9" : "#0A192F",
+              color: m.role === "user" ? "#0F172A" : C.brand,
+              border: m.role === "user" ? "none" : `1px solid ${C.brand}33`,
+              borderBottomRightRadius: m.role === "user" ? 0 : 8,
+              borderBottomLeftRadius: m.role === "model" ? 0 : 8,
+            }}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {thinking && (
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{ padding: "10px 14px", borderRadius: 8, fontSize: 11, color: C.brand, background: "#0A192F", fontFamily: "'Space Mono',monospace", border: `1px solid ${C.brand}33`, borderBottomLeftRadius: 0 }}>
+              OSIRIS is thinking...
+            </div>
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      <div style={{ padding: "16px", borderTop: `1px solid ${C.border}`, background: "#0D1C2B" }}>
+        {messages.length === 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+            {chips.map((c, i) => (
+              <button key={i} onClick={() => handleSend(c)} style={{ textAlign: "left", padding: "8px 10px", background: "rgba(254,197,2,0.05)", border: `1px solid ${C.brand}33`, borderRadius: 6, color: C.textMid, fontSize: 11, cursor: "pointer", transition: "all 0.2s" }}
+                onMouseOver={(e) => { e.currentTarget.style.background = `rgba(254,197,2,0.1)`; e.currentTarget.style.color = C.brand; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = `rgba(254,197,2,0.05)`; e.currentTarget.style.color = C.textMid; }}>
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
+            placeholder="Ask a question..."
+            style={{ flex: 1, padding: "10px 14px", borderRadius: 8, border: `1px solid ${C.border}`, background: "#0A192F", color: "white", fontSize: 13, outline: "none", minWidth: 0 }}
+            onFocus={(e) => e.target.style.border = `1px solid ${C.brand}`}
+            onBlur={(e) => e.target.style.border = `1px solid ${C.border}`}
+          />
+          <button onClick={() => handleSend()} disabled={thinking} style={{ padding: "0 14px", borderRadius: 8, background: C.brand, color: "#12263A", border: "none", cursor: thinking ? "not-allowed" : "pointer", fontWeight: 800, flexShrink: 0, opacity: thinking ? 0.5 : 1 }}>
+            ➤
+          </button>
+        </div>
+        <div style={{ textAlign: "center", marginTop: 10, fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: "'Space Mono',monospace" }}>
+          Powered by Gemini
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
-function Topbar({ title, subtitle, flash }) {
+function Topbar({ title, subtitle, flash, action }) {
   return (
     <header style={{ height: 60, background: "rgba(13,28,43,0.95)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${flash ? C.brand : "rgba(254,197,2,0.1)"}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 50, fontFamily: "'Space Grotesk',sans-serif", transition: "border-color 0.3s ease" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -541,6 +708,7 @@ function Topbar({ title, subtitle, flash }) {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {action}
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.6)", padding: "6px 12px", border: `1px solid rgba(48,188,237,0.3)`, background: `rgba(48,188,237,0.08)`, fontFamily: "'Space Mono',monospace", letterSpacing: "0.02em" }}>
           <Icons.Lock /> ASSIST · RECOMMEND · SIMULATE
         </div>
@@ -781,7 +949,7 @@ function MonitorPage({ onAnalyze, globalAlerts, currentProfile }) {
 }
 
 // ─── RISK ANALYSIS PAGE ───────────────────────────────────────────────────────
-function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
+function AnalysisPage({ focusAlert, globalAlerts, currentProfile, chatOpen }) {
   const alertsToUse = globalAlerts && globalAlerts.length > 0 ? globalAlerts : ACTIVE_ALERTS;
   const initialAlert = alertsToUse.find(a => a.id === focusAlert?.id) || alertsToUse[0];
 
@@ -1012,363 +1180,361 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
   };
 
   return (
-    <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
+    <>
+      <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
 
-      {/* Alert selector */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        {alertsToUse.map(a => {
-          const c = SEV_CFG[a.severity] || SEV_CFG.medium;
-          const isActive = selected.id === a.id;
-          return (
-            <button key={a.id} onClick={() => { setSelected(a); setEmailStatus("pending"); setErpStatus("pending"); }}
-              style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${isActive ? c.color : C.border} `, background: isActive ? c.bg : C.card, cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans',sans-serif" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 10, fontWeight: 800, color: c.color, letterSpacing: "0.04em" }}>{c.label.toUpperCase()}</span>
-                <span style={{ fontSize: 10, color: C.textLight }}>{a.id}</span>
+        {/* Alert selector */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+          {alertsToUse.map(a => {
+            const c = SEV_CFG[a.severity] || SEV_CFG.medium;
+            const isActive = selected.id === a.id;
+            return (
+              <button key={a.id} onClick={() => { setSelected(a); setEmailStatus("pending"); setErpStatus("pending"); }}
+                style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${isActive ? c.color : C.border} `, background: isActive ? c.bg : C.card, cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans',sans-serif" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: c.color, letterSpacing: "0.04em" }}>{c.label.toUpperCase()}</span>
+                  <span style={{ fontSize: 10, color: C.textLight }}>{a.id}</span>
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{a.title}</div>
+                <div style={{ fontSize: 11, color: C.textLight, marginTop: 4 }}>{a.revenueAtRisk} at risk</div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Alert header */}
+        <div style={{ background: cfg.bg, border: `1px solid ${cfg.border} `, borderRadius: 12, padding: "20px 24px", marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <span style={{ fontSize: 10, fontWeight: 800, color: cfg.color, letterSpacing: "0.06em", padding: "4px 10px", background: cfg.color + "15", borderRadius: 999, border: `1px solid ${cfg.border} ` }}>{cfg.label.toUpperCase()} — {selected.id}</span>
+                {selected.escalate && <span style={{ fontSize: 10, fontWeight: 700, color: C.critical, padding: "3px 9px", background: C.criticalLight, border: `1px solid ${C.criticalBorder} ` }}>ESCALATION REQUIRED</span>}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{a.title}</div>
-              <div style={{ fontSize: 11, color: C.textLight, marginTop: 4 }}>{a.revenueAtRisk} at risk</div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Alert header */}
-      <div style={{ background: cfg.bg, border: `1px solid ${cfg.border} `, borderRadius: 12, padding: "20px 24px", marginBottom: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 800, color: cfg.color, letterSpacing: "0.06em", padding: "4px 10px", background: cfg.color + "15", borderRadius: 999, border: `1px solid ${cfg.border} ` }}>{cfg.label.toUpperCase()} — {selected.id}</span>
-              {selected.escalate && <span style={{ fontSize: 10, fontWeight: 700, color: C.critical, padding: "3px 9px", background: C.criticalLight, border: `1px solid ${C.criticalBorder} ` }}>ESCALATION REQUIRED</span>}
+              <div style={{ fontSize: 22, fontWeight: 900, color: C.text, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em", marginBottom: 4 }}>{selected.title}</div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ fontSize: 13, color: C.textMid, fontWeight: 600 }}>{selected.supplier} · {selected.region} · {selected.commodity}</div>
+                {matchedCountry && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 6, background: countryBaseline > 30 ? C.criticalLight : (countryBaseline >= 15 ? C.mediumLight : C.successLight), color: countryBaseline > 30 ? C.critical : (countryBaseline >= 15 ? C.medium : C.success), fontSize: 10, fontWeight: 800, border: `1px solid ${countryBaseline > 30 ? C.criticalBorder : (countryBaseline >= 15 ? C.mediumBorder : C.successLight)} ` }}>
+                    <span>{getCountryFlag(matchedCountry)}</span>
+                    <span>{matchedCountry} {countryBaseline}/100</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: C.text, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em", marginBottom: 4 }}>{selected.title}</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <div style={{ fontSize: 13, color: C.textMid, fontWeight: 600 }}>{selected.supplier} · {selected.region} · {selected.commodity}</div>
-              {matchedCountry && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 6, background: countryBaseline > 30 ? C.criticalLight : (countryBaseline >= 15 ? C.mediumLight : C.successLight), color: countryBaseline > 30 ? C.critical : (countryBaseline >= 15 ? C.medium : C.success), fontSize: 10, fontWeight: 800, border: `1px solid ${countryBaseline > 30 ? C.criticalBorder : (countryBaseline >= 15 ? C.mediumBorder : C.successLight)} ` }}>
-                  <span>{getCountryFlag(matchedCountry)}</span>
-                  <span>{matchedCountry} {countryBaseline}/100</span>
+            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+              <RiskGauge score={adjustedRiskScore} size={100} />
+              <div style={{ background: selected.escalate ? C.criticalLight : C.successLight, border: `1px solid ${selected.escalate ? C.criticalBorder : C.successLight} `, borderRadius: 10, padding: "12px 18px", textAlign: "center" }}>
+                <div style={{ color: selected.escalate ? C.critical : C.success, display: "flex", justifyContent: "center", marginBottom: 6 }}>
+                  {selected.escalate ? <Icons.AlertTriangle /> : <Icons.CheckCircle />}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: selected.escalate ? C.critical : C.success }}>{selected.escalate ? "Escalation\nRequired" : "No\nEscalation"}</div>
+              </div>
+            </div>
+          </div>
+          <p style={{ fontSize: 13, color: C.textMid, lineHeight: 1.7, margin: 0 }}>{selected.summary}</p>
+        </div>
+
+        {/* Stats row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
+          {[
+            ["Revenue at Risk", selected.revenueAtRisk, cfg.color],
+            ["Confidence Score", `${selected.confidenceScore}% `, C.text],
+            ["Days to Stockout", `${selected.daysToStockout} d`, selected.daysToStockout < 10 ? C.critical : C.high],
+            ["Cost-of-Delay", getTierLabel(selected.costOfDelayTier), cfg.color],
+            ["Detected", selected.detectedAt, C.textMid],
+          ].map(([l, v, c]) => (
+            <div key={l} style={{ background: C.card, borderRadius: 10, padding: "14px 16px", border: `1px solid ${C.border} ` }}>
+              <div style={{ fontSize: 11, color: C.textLight, marginBottom: 6, fontWeight: 500 }}>{l}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: c, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em" }}>{v}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Supplier Financial Health */}
+        {supplierHealth && (
+          <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18, animation: "fadeUp 0.3s ease" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Supplier Financial Health (API)</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "white", background: supplierHealth.insolvencyRiskScore > 35 ? C.critical : C.success, padding: "4px 10px", borderRadius: 6, letterSpacing: "0.05em" }}>
+                {supplierHealth.insolvencyRiskLevel.toUpperCase()} RISK
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+              <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Ticker</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.ticker}</div>
+              </div>
+              <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Insolvency Score</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.insolvencyRiskScore > 35 ? C.critical : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.insolvencyRiskScore}/100</div>
+              </div>
+              <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Debt-to-Equity</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.debtToEquity > 1.5 ? C.high : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.debtToEquity}</div>
+              </div>
+              <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Current Ratio</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.currentRatio < 1.2 ? C.high : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.currentRatio}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scenarios */}
+        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Scenario Simulation</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+            {[
+              { label: "Base Case", ...mockResult.scenarios.baseCase, color: C.success },
+              { label: "Stress Case", ...mockResult.scenarios.stressCase, color: C.high },
+              { label: "Shock Case", ...mockResult.scenarios.shockCase, color: C.critical },
+            ].map(s => (
+              <div key={s.label} style={{ background: C.bg, borderRadius: 10, padding: "16px", borderTop: `3px solid ${s.color} ` }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: s.color, marginBottom: 4, letterSpacing: "0.04em" }}>{s.label.toUpperCase()}</div>
+                {s.note && <div style={{ fontSize: 10, color: C.textLight, marginBottom: 10 }}>{s.note}</div>}
+                {[["Transit Delay", s.delay], ["Additional Cost", s.cost], ["Revenue Impact", s.rev], ["Service Level", s.svc]].map(([k, v]) => (
+                  <div key={k} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <span style={{ fontSize: 12, color: C.textMid }}>{k}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: k === "Revenue Impact" ? s.color : C.text, fontFamily: "'Sora',sans-serif" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Playbook */}
+        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Ranked Mitigation Playbook</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {activePlaybook.map((p, i) => (
+              <div key={p.rank || i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border} ` }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: (p.rank || i + 1) === 1 ? C.brand : (p.rank || i + 1) === 2 ? C.high : "#94A3B8", color: "white", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>#{p.rank || i + 1}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2 }}>{p.action}</div>
+                  <div style={{ fontSize: 12, color: C.textMid }}>{p.description}</div>
+                  <div style={{ fontSize: 11, color: C.textLight, marginTop: 4, fontStyle: "italic" }}>Trade-off: {p.tradeOff || p.tradeoff}</div>
+                </div>
+                <div style={{ display: "flex", gap: 18, flexShrink: 0 }}>
+                  {[["Cost", p.cost || "-"], ["Time", p.time || "-"], ["Risk ↓", `${p.reduction || 0}% `], ["Feasibility", `${p.feasibility || 0}% `]].map(([k, v]) => (
+                    <div key={k} style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 10, color: C.textLight }}>{k}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: k === "Risk ↓" ? C.success : C.text, fontFamily: "'Sora',sans-serif" }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ width: 60, flexShrink: 0 }}>
+                  <div style={{ fontSize: 9, color: C.textLight, marginBottom: 4 }}>COMPOSITE</div>
+                  <div style={{ height: 4, background: "#E2E8F0", borderRadius: 999, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${p.composite || p.feasibility || 0}% `, background: (p.rank || i + 1) === 1 ? C.brand : C.accent, borderRadius: 999 }} />
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginTop: 3, fontFamily: "'Sora',sans-serif" }}>{p.composite || p.feasibility || 0}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Critic pass */}
+        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Fira Code',sans-serif" }}>Critic Pass — Mandatory Second Opinion</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            {[
+              [{ icon: <Icons.Refresh />, label: "Alternative Forced" }, mockResult.criticPass.alt],
+              [{ icon: <Icons.DollarSign />, label: "Cash Flow Assessment" }, mockResult.criticPass.cash],
+              [{ icon: <Icons.AlertTriangle />, label: "Overlooked Risks" }, mockResult.criticPass.overlooked],
+              [{ icon: <Icons.CheckCircle />, label: "Escalation Validity" }, mockResult.criticPass.validity]
+            ].map(([{ icon, label }, v]) => (
+              <div key={label} style={{ background: C.bg, borderRadius: 9, padding: "13px 16px", border: `1px solid ${C.border} ` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 6 }}>{icon} {label}</div>
+                <div style={{ fontSize: 12, color: C.text, lineHeight: 1.6 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Draft email + ERP */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
+          <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Draft Supplier Email</div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: emailStatus === "pending" ? C.high : (emailStatus === "approved" ? C.success : C.textMid), background: emailStatus === "pending" ? C.highLight : (emailStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${emailStatus === "pending" ? C.highBorder : (emailStatus === "approved" ? C.success : C.border)} ` }}>
+                {emailStatus === "pending" ? "⏸ AWAITING APPROVAL" : (emailStatus === "approved" ? "✓ EXECUTED" : "DISMISSED")}
+              </span>
+            </div>
+            <div style={{ background: C.bg, borderRadius: 8, padding: "12px 14px", marginBottom: 12, fontFamily: "monospace" }}>
+              <div style={{ fontSize: 12, color: C.textMid, marginBottom: 4 }}><span style={{ color: C.brand, fontWeight: 700 }}>TO: </span>procurement@{selected.supplier.toLowerCase().split("/")[0].trim().replace(/[^a-z]/g, "")}.com</div>
+              <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10 }}><span style={{ color: C.brand, fontWeight: 700 }}>SUB: </span>[URGENT] Supply Continuity Review — {selected.commodity}</div>
+              <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.7, fontFamily: "'Fira Sans',sans-serif" }}>
+                Dear {selected.supplier} team,<br /><br />
+                We are formally requesting an urgent supply continuity review following disruption signals in the {selected.region} corridor affecting {selected.commodity} supply.<br /><br />
+                Please confirm current production status, lead times, and alternative options within 24 hours.<br /><br />
+                Reference: {selected.id}
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontSize: 11, color: C.textLight }}>Human approval required before sending</div>
+              {emailStatus === "pending" ? (
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => handleAction("email", "dismissed")} disabled={emailSending}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                    Dismiss
+                  </button>
+                  <button onClick={() => handleAction("email", "approved")} disabled={emailSending}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                    {emailSending ? "Sending..." : "Approve & Send"}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${emailStatus === "approved" ? C.success : C.border} `, background: emailStatus === "approved" ? C.successLight : "#F1F5F9", color: emailStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
+                  {emailStatus === "approved" ? "✓ Approved & Sent" : "Dismissed"}
                 </div>
               )}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <RiskGauge score={adjustedRiskScore} size={100} />
-            <div style={{ background: selected.escalate ? C.criticalLight : C.successLight, border: `1px solid ${selected.escalate ? C.criticalBorder : C.successLight} `, borderRadius: 10, padding: "12px 18px", textAlign: "center" }}>
-              <div style={{ color: selected.escalate ? C.critical : C.success, display: "flex", justifyContent: "center", marginBottom: 6 }}>
-                {selected.escalate ? <Icons.AlertTriangle /> : <Icons.CheckCircle />}
+
+          <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>
+                AI Voice Alert <Icons.Phone />
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: selected.escalate ? C.critical : C.success }}>{selected.escalate ? "Escalation\nRequired" : "No\nEscalation"}</div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: ["pending", "previewing", "previewed"].includes(voiceStatus) ? C.medium : (voiceStatus === "playing" ? C.success : (voiceStatus === "dispatched" ? C.success : C.textMid)), background: ["pending", "previewing", "previewed"].includes(voiceStatus) ? C.mediumLight : (["playing", "dispatched"].includes(voiceStatus) ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${["pending", "previewing", "previewed"].includes(voiceStatus) ? C.mediumBorder : (["playing", "dispatched"].includes(voiceStatus) ? C.success : C.border)} ` }}>
+                {["pending", "previewing"].includes(voiceStatus) ? "⏸ AWAITING PREVIEW" : (voiceStatus === "previewed" ? "⏸ AWAITING APPROVAL" : (voiceStatus === "playing" ? "▶ PLAYING..." : (voiceStatus === "dispatched" ? "✓ ALERT DISPATCHED" : "DISMISSED")))}
+              </span>
             </div>
-          </div>
-        </div>
-        <p style={{ fontSize: 13, color: C.textMid, lineHeight: 1.7, margin: 0 }}>{selected.summary}</p>
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
-        {[
-          ["Revenue at Risk", selected.revenueAtRisk, cfg.color],
-          ["Confidence Score", `${selected.confidenceScore}% `, C.text],
-          ["Days to Stockout", `${selected.daysToStockout} d`, selected.daysToStockout < 10 ? C.critical : C.high],
-          ["Cost-of-Delay", getTierLabel(selected.costOfDelayTier), cfg.color],
-          ["Detected", selected.detectedAt, C.textMid],
-        ].map(([l, v, c]) => (
-          <div key={l} style={{ background: C.card, borderRadius: 10, padding: "14px 16px", border: `1px solid ${C.border} ` }}>
-            <div style={{ fontSize: 11, color: C.textLight, marginBottom: 6, fontWeight: 500 }}>{l}</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: c, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em" }}>{v}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Supplier Financial Health */}
-      {supplierHealth && (
-        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18, animation: "fadeUp 0.3s ease" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Supplier Financial Health (API)</div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "white", background: supplierHealth.insolvencyRiskScore > 35 ? C.critical : C.success, padding: "4px 10px", borderRadius: 6, letterSpacing: "0.05em" }}>
-              {supplierHealth.insolvencyRiskLevel.toUpperCase()} RISK
+            <div style={{ background: C.bg, borderRadius: 8, padding: "12px 14px", marginBottom: 12, fontFamily: "monospace" }}>
+              {voiceError && <div style={{ fontSize: 12, color: C.medium, fontWeight: 600, marginBottom: 8, paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>{voiceError}</div>}
+              <div style={{ fontSize: 12, color: voiceError ? C.medium : C.textMid, lineHeight: 1.7, fontFamily: "'Fira Sans',sans-serif" }}>
+                {selected ? buildCallScript(selected, selected.supplier, 'an urgent supply continuity review and confirmation of alternative sourcing options') : ''}
+              </div>
             </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-            <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Ticker</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.ticker}</div>
-            </div>
-            <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Insolvency Score</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.insolvencyRiskScore > 35 ? C.critical : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.insolvencyRiskScore}/100</div>
-            </div>
-            <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Debt-to-Equity</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.debtToEquity > 1.5 ? C.high : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.debtToEquity}</div>
-            </div>
-            <div style={{ padding: "12px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-              <div style={{ fontSize: 10, color: C.textMid, fontWeight: 600, marginBottom: 4 }}>Current Ratio</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: supplierHealth.currentRatio < 1.2 ? C.high : C.text, fontFamily: "'Fira Code',sans-serif" }}>{supplierHealth.currentRatio}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Scenarios */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Scenario Simulation</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-          {[
-            { label: "Base Case", ...mockResult.scenarios.baseCase, color: C.success },
-            { label: "Stress Case", ...mockResult.scenarios.stressCase, color: C.high },
-            { label: "Shock Case", ...mockResult.scenarios.shockCase, color: C.critical },
-          ].map(s => (
-            <div key={s.label} style={{ background: C.bg, borderRadius: 10, padding: "16px", borderTop: `3px solid ${s.color} ` }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: s.color, marginBottom: 4, letterSpacing: "0.04em" }}>{s.label.toUpperCase()}</div>
-              {s.note && <div style={{ fontSize: 10, color: C.textLight, marginBottom: 10 }}>{s.note}</div>}
-              {[["Transit Delay", s.delay], ["Additional Cost", s.cost], ["Revenue Impact", s.rev], ["Service Level", s.svc]].map(([k, v]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, color: C.textMid }}>{k}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: k === "Revenue Impact" ? s.color : C.text, fontFamily: "'Sora',sans-serif" }}>{v}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontSize: 11, color: C.textLight }}>Human approval required before dispatch</div>
+              {["pending", "previewing"].includes(voiceStatus) ? (
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => handleVoiceAction("dismissed")} disabled={voiceSending}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                    Dismiss
+                  </button>
+                  <button onClick={() => handleVoiceAction("preview")} disabled={voiceSending}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                    {voiceSending ? "Generating..." : "Preview Audio"}
+                  </button>
                 </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Playbook */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Ranked Mitigation Playbook</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {activePlaybook.map((p, i) => (
-            <div key={p.rank || i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border} ` }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: (p.rank || i + 1) === 1 ? C.brand : (p.rank || i + 1) === 2 ? C.high : "#94A3B8", color: "white", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>#{p.rank || i + 1}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2 }}>{p.action}</div>
-                <div style={{ fontSize: 12, color: C.textMid }}>{p.description}</div>
-                <div style={{ fontSize: 11, color: C.textLight, marginTop: 4, fontStyle: "italic" }}>Trade-off: {p.tradeOff || p.tradeoff}</div>
-              </div>
-              <div style={{ display: "flex", gap: 18, flexShrink: 0 }}>
-                {[["Cost", p.cost || "-"], ["Time", p.time || "-"], ["Risk ↓", `${p.reduction || 0}% `], ["Feasibility", `${p.feasibility || 0}% `]].map(([k, v]) => (
-                  <div key={k} style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 10, color: C.textLight }}>{k}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: k === "Risk ↓" ? C.success : C.text, fontFamily: "'Sora',sans-serif" }}>{v}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ width: 60, flexShrink: 0 }}>
-                <div style={{ fontSize: 9, color: C.textLight, marginBottom: 4 }}>COMPOSITE</div>
-                <div style={{ height: 4, background: "#E2E8F0", borderRadius: 999, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${p.composite || p.feasibility || 0}% `, background: (p.rank || i + 1) === 1 ? C.brand : C.accent, borderRadius: 999 }} />
+              ) : voiceStatus === "previewed" ? (
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => handleVoiceAction("dismissed")}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                    Dismiss
+                  </button>
+                  <button onClick={() => handleVoiceAction("approved")}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.success} `, background: C.success, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                    Approve Dispatch
+                  </button>
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginTop: 3, fontFamily: "'Sora',sans-serif" }}>{p.composite || p.feasibility || 0}</div>
+              ) : voiceStatus === "playing" ? (
+                <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.success} `, background: C.successLight, color: C.success, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
+                  ▶ Playing...
+                </div>
+              ) : (
+                <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${voiceStatus === "dispatched" ? C.success : C.border} `, background: voiceStatus === "dispatched" ? C.successLight : "#F1F5F9", color: voiceStatus === "dispatched" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
+                  {voiceStatus === "dispatched" ? "Dispatched" : "Dismissed"}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 18 }}>
+          <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>ERP Adjustment Flag</div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: erpStatus === "pending" ? C.textLight : (erpStatus === "approved" ? C.success : C.textMid), background: erpStatus === "pending" ? "#F8FAFC" : (erpStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${erpStatus === "pending" ? C.border : (erpStatus === "approved" ? C.success : C.border)} ` }}>
+                {erpStatus === "pending" ? "[ SIM ] SIMULATED ONLY" : (erpStatus === "approved" ? "[ OK ] EXECUTED" : "DISMISSED")}
+              </span>
+            </div>
+            {[["Action", "Safety stock threshold review"], ["System", "SAP S/4HANA"], ["Reorder Point", "+20% for SKU-4421, SKU-4422 for 45 days"], ["Safety Stock Rec", "Build 30-day buffer from alternate source"], ["Status", "[ SIM ] SIMULATED — No write performed"]].map(([k, v]) => (
+              <div key={k} style={{ display: "flex", gap: 12, marginBottom: 8, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 10, color: C.textLight, fontWeight: 700, minWidth: 90, paddingTop: 2, letterSpacing: "0.03em" }}>{k.toUpperCase()}</span>
+                <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>{v}</span>
               </div>
+            ))}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.textLight }}><Icons.Lock /> No ERP writes without CFO approval</div>
+              {erpStatus === "pending" ? (
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => handleAction("erp", "dismissed")}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
+                    Dismiss
+                  </button>
+                  <button onClick={() => handleAction("erp", "approved")}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
+                    Approve Write
+                  </button>
+                </div>
+              ) : (
+                <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${erpStatus === "approved" ? C.success : C.border} `, background: erpStatus === "approved" ? C.successLight : "#F1F5F9", color: erpStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'Fira Sans',sans-serif" }}>
+                  {erpStatus === "approved" ? "Write Approved" : "Dismissed"}
+                </div>
+              )}
             </div>
-          ))}
+          </div>
         </div>
-      </div>
 
-      {/* Critic pass */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Fira Code',sans-serif" }}>Critic Pass — Mandatory Second Opinion</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-          {[
-            [{ icon: <Icons.Refresh />, label: "Alternative Forced" }, mockResult.criticPass.alt],
-            [{ icon: <Icons.DollarSign />, label: "Cash Flow Assessment" }, mockResult.criticPass.cash],
-            [{ icon: <Icons.AlertTriangle />, label: "Overlooked Risks" }, mockResult.criticPass.overlooked],
-            [{ icon: <Icons.CheckCircle />, label: "Escalation Validity" }, mockResult.criticPass.validity]
-          ].map(([{ icon, label }, v]) => (
-            <div key={label} style={{ background: C.bg, borderRadius: 9, padding: "13px 16px", border: `1px solid ${C.border} ` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 6 }}>{icon} {label}</div>
-              <div style={{ fontSize: 12, color: C.text, lineHeight: 1.6 }}>{v}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Draft email + ERP */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
+        {/* Reasoning trace */}
         <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Draft Supplier Email</div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: emailStatus === "pending" ? C.high : (emailStatus === "approved" ? C.success : C.textMid), background: emailStatus === "pending" ? C.highLight : (emailStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${emailStatus === "pending" ? C.highBorder : (emailStatus === "approved" ? C.success : C.border)} ` }}>
-              {emailStatus === "pending" ? "⏸ AWAITING APPROVAL" : (emailStatus === "approved" ? "✓ EXECUTED" : "DISMISSED")}
-            </span>
-          </div>
-          <div style={{ background: C.bg, borderRadius: 8, padding: "12px 14px", marginBottom: 12, fontFamily: "monospace" }}>
-            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 4 }}><span style={{ color: C.brand, fontWeight: 700 }}>TO: </span>procurement@{selected.supplier.toLowerCase().split("/")[0].trim().replace(/[^a-z]/g, "")}.com</div>
-            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10 }}><span style={{ color: C.brand, fontWeight: 700 }}>SUB: </span>[URGENT] Supply Continuity Review — {selected.commodity}</div>
-            <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.7, fontFamily: "'Fira Sans',sans-serif" }}>
-              Dear {selected.supplier} team,<br /><br />
-              We are formally requesting an urgent supply continuity review following disruption signals in the {selected.region} corridor affecting {selected.commodity} supply.<br /><br />
-              Please confirm current production status, lead times, and alternative options within 24 hours.<br /><br />
-              Reference: {selected.id}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: 11, color: C.textLight }}>Human approval required before sending</div>
-            {emailStatus === "pending" ? (
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => handleAction("email", "dismissed")} disabled={emailSending}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  Dismiss
-                </button>
-                <button onClick={() => handleAction("email", "approved")} disabled={emailSending}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  {emailSending ? "Sending..." : "Approve & Send"}
-                </button>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Fira Code',sans-serif" }}>Full Reasoning Trace — Grounded Citations</div>
+          <div style={{ background: C.bg, borderRadius: 9, padding: "14px 16px", maxHeight: 260, overflowY: "auto" }}>
+            {mockResult.reasoning.map((step, i) => (
+              <div key={i} style={{ display: "flex", gap: 14, marginBottom: 10, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 11, color: C.accent, fontFamily: "monospace", minWidth: 24, fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</span>
+                <span style={{ fontSize: 12, color: C.textMid, lineHeight: 1.6 }}>{step}</span>
               </div>
-            ) : (
-              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${emailStatus === "approved" ? C.success : C.border} `, background: emailStatus === "approved" ? C.successLight : "#F1F5F9", color: emailStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
-                {emailStatus === "approved" ? "✓ Approved & Sent" : "Dismissed"}
-              </div>
-            )}
+            ))}
           </div>
         </div>
 
-        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>
-              AI Voice Alert <Icons.Phone />
+        {/* Intelligence Forecast */}
+        <div style={{ background: "#0F172A", borderRadius: 12, padding: "18px 22px", border: `1px solid rgb(51, 65, 85)`, marginTop: 18, color: "#E2E8F0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: forecast || isLoadingForecast ? 14 : 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: C.medium, fontFamily: "'Fira Code', monospace", letterSpacing: "0.05em" }}>[ FORECAST // 24H OUTLOOK ]</div>
+              {forecast && forecastProvider !== 'mock' && (
+                <div style={{ fontSize: 10, border: "1px solid rgba(255,255,255,0.1)", padding: "2px 8px", borderRadius: 999, color: "#94A3B8" }}>
+                  Powered by {forecastProvider === 'gemini' ? 'Gemini' : 'Groq'}
+                </div>
+              )}
             </div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: ["pending", "previewing", "previewed"].includes(voiceStatus) ? C.medium : (voiceStatus === "playing" ? C.success : (voiceStatus === "dispatched" ? C.success : C.textMid)), background: ["pending", "previewing", "previewed"].includes(voiceStatus) ? C.mediumLight : (["playing", "dispatched"].includes(voiceStatus) ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${["pending", "previewing", "previewed"].includes(voiceStatus) ? C.mediumBorder : (["playing", "dispatched"].includes(voiceStatus) ? C.success : C.border)} ` }}>
-              {["pending", "previewing"].includes(voiceStatus) ? "⏸ AWAITING PREVIEW" : (voiceStatus === "previewed" ? "⏸ AWAITING APPROVAL" : (voiceStatus === "playing" ? "▶ PLAYING..." : (voiceStatus === "dispatched" ? "✓ ALERT DISPATCHED" : "DISMISSED")))}
-            </span>
-          </div>
-          <div style={{ background: C.bg, borderRadius: 8, padding: "12px 14px", marginBottom: 12, fontFamily: "monospace" }}>
-            {voiceError && <div style={{ fontSize: 12, color: C.medium, fontWeight: 600, marginBottom: 8, paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>{voiceError}</div>}
-            <div style={{ fontSize: 12, color: voiceError ? C.medium : C.textMid, lineHeight: 1.7, fontFamily: "'Fira Sans',sans-serif" }}>
-              {selected ? buildCallScript(selected, selected.supplier, 'an urgent supply continuity review and confirmation of alternative sourcing options') : ''}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: 11, color: C.textLight }}>Human approval required before dispatch</div>
-            {["pending", "previewing"].includes(voiceStatus) ? (
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => handleVoiceAction("dismissed")} disabled={voiceSending}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  Dismiss
-                </button>
-                <button onClick={() => handleVoiceAction("preview")} disabled={voiceSending}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  {voiceSending ? "Generating..." : "Preview Audio"}
-                </button>
-              </div>
-            ) : voiceStatus === "previewed" ? (
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => handleVoiceAction("dismissed")}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  Dismiss
-                </button>
-                <button onClick={() => handleVoiceAction("approved")}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.success} `, background: C.success, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
-                  Approve Dispatch
-                </button>
-              </div>
-            ) : voiceStatus === "playing" ? (
-              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.success} `, background: C.successLight, color: C.success, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
-                ▶ Playing...
-              </div>
-            ) : (
-              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${voiceStatus === "dispatched" ? C.success : C.border} `, background: voiceStatus === "dispatched" ? C.successLight : "#F1F5F9", color: voiceStatus === "dispatched" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
-                {voiceStatus === "dispatched" ? "Dispatched" : "Dismissed"}
-              </div>
+            {!forecast && !isLoadingForecast && (
+              <button
+                onClick={handleGenerateForecast}
+                style={{ padding: "6px 14px", borderRadius: 4, border: `1px solid ${C.medium} `, background: "transparent", color: C.medium, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Fira Code', monospace" }}
+              >
+                DECRYPT SCENARIO
+              </button>
             )}
           </div>
-        </div>
-      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 18 }}>
-        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>ERP Adjustment Flag</div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: erpStatus === "pending" ? C.textLight : (erpStatus === "approved" ? C.success : C.textMid), background: erpStatus === "pending" ? "#F8FAFC" : (erpStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${erpStatus === "pending" ? C.border : (erpStatus === "approved" ? C.success : C.border)} ` }}>
-              {erpStatus === "pending" ? "[ SIM ] SIMULATED ONLY" : (erpStatus === "approved" ? "[ OK ] EXECUTED" : "DISMISSED")}
-            </span>
-          </div>
-          {[["Action", "Safety stock threshold review"], ["System", "SAP S/4HANA"], ["Reorder Point", "+20% for SKU-4421, SKU-4422 for 45 days"], ["Safety Stock Rec", "Build 30-day buffer from alternate source"], ["Status", "[ SIM ] SIMULATED — No write performed"]].map(([k, v]) => (
-            <div key={k} style={{ display: "flex", gap: 12, marginBottom: 8, alignItems: "flex-start" }}>
-              <span style={{ fontSize: 10, color: C.textLight, fontWeight: 700, minWidth: 90, paddingTop: 2, letterSpacing: "0.03em" }}>{k.toUpperCase()}</span>
-              <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>{v}</span>
+          {isLoadingForecast && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+              <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "100%", animation: "pulseAnim 1.5s infinite" }} />
+              <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "85%", animation: "pulseAnim 1.5s infinite.2s" }} />
+              <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "92%", animation: "pulseAnim 1.5s infinite.4s" }} />
             </div>
-          ))}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.textLight }}><Icons.Lock /> No ERP writes without CFO approval</div>
-            {erpStatus === "pending" ? (
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => handleAction("erp", "dismissed")}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
-                  Dismiss
-                </button>
-                <button onClick={() => handleAction("erp", "approved")}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
-                  Approve Write
-                </button>
-              </div>
-            ) : (
-              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${erpStatus === "approved" ? C.success : C.border} `, background: erpStatus === "approved" ? C.successLight : "#F1F5F9", color: erpStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'Fira Sans',sans-serif" }}>
-                {erpStatus === "approved" ? "Write Approved" : "Dismissed"}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+          )}
 
-      {/* Reasoning trace */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Fira Code',sans-serif" }}>Full Reasoning Trace — Grounded Citations</div>
-        <div style={{ background: C.bg, borderRadius: 9, padding: "14px 16px", maxHeight: 260, overflowY: "auto" }}>
-          {mockResult.reasoning.map((step, i) => (
-            <div key={i} style={{ display: "flex", gap: 14, marginBottom: 10, alignItems: "flex-start" }}>
-              <span style={{ fontSize: 11, color: C.accent, fontFamily: "monospace", minWidth: 24, fontWeight: 700 }}>{String(i + 1).padStart(2, "0")}</span>
-              <span style={{ fontSize: 12, color: C.textMid, lineHeight: 1.6 }}>{step}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Intelligence Forecast */}
-      <div style={{ background: "#0F172A", borderRadius: 12, padding: "18px 22px", border: `1px solid rgb(51, 65, 85)`, marginTop: 18, color: "#E2E8F0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: forecast || isLoadingForecast ? 14 : 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: C.medium, fontFamily: "'Fira Code', monospace", letterSpacing: "0.05em" }}>[ FORECAST // 24H OUTLOOK ]</div>
-            {forecast && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: 6, color: "#94A3B8" }}>
-                <span style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: forecastProvider === 'gemini' ? "#4285F4" : (forecastProvider === 'claude' ? "#D97757" : "#64748B")
-                }} />
-                Powered by {forecastProvider === 'gemini' ? 'Gemini' : (forecastProvider === 'claude' ? 'Claude' : 'Mock Data')}
+          {forecast && (
+            <details open style={{ background: "#1E293B", borderRadius: 6, padding: "16px 20px", border: `1px solid rgb(51, 65, 85)`, cursor: "pointer", outline: "none" }}>
+              <summary style={{ fontWeight: 700, color: "#94A3B8", marginBottom: 12, outline: "none", fontSize: 11, userSelect: "none", fontFamily: "'Fira Code', monospace", letterSpacing: "0.05em" }}>[+] SYSTEM.ANALYZE()</summary>
+              <div style={{ fontSize: 12, color: "#38BDF8", lineHeight: 1.7, whiteSpace: "pre-wrap", cursor: "text", fontFamily: "'Fira Code', monospace" }}>
+                {forecast}
               </div>
-            )}
-          </div>
-          {!forecast && !isLoadingForecast && (
-            <button
-              onClick={handleGenerateForecast}
-              style={{ padding: "6px 14px", borderRadius: 4, border: `1px solid ${C.medium} `, background: "transparent", color: C.medium, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Fira Code', monospace" }}
-            >
-              DECRYPT SCENARIO
-            </button>
+            </details>
           )}
         </div>
 
-        {isLoadingForecast && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-            <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "100%", animation: "pulseAnim 1.5s infinite" }} />
-            <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "85%", animation: "pulseAnim 1.5s infinite.2s" }} />
-            <div style={{ height: 12, background: "rgb(51, 65, 85)", borderRadius: 4, width: "92%", animation: "pulseAnim 1.5s infinite.4s" }} />
-          </div>
-        )}
-
-        {forecast && (
-          <details open style={{ background: "#1E293B", borderRadius: 6, padding: "16px 20px", border: `1px solid rgb(51, 65, 85)`, cursor: "pointer", outline: "none" }}>
-            <summary style={{ fontWeight: 700, color: "#94A3B8", marginBottom: 12, outline: "none", fontSize: 11, userSelect: "none", fontFamily: "'Fira Code', monospace", letterSpacing: "0.05em" }}>[+] SYSTEM.ANALYZE()</summary>
-            <div style={{ fontSize: 12, color: "#38BDF8", lineHeight: 1.7, whiteSpace: "pre-wrap", cursor: "text", fontFamily: "'Fira Code', monospace" }}>
-              {forecast}
-            </div>
-          </details>
-        )}
       </div>
-
-    </div>
+    </>
   );
 }
 
@@ -1771,10 +1937,10 @@ function SettingsPage({ currentProfile, setCurrentProfile, systemProfiles }) {
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            style={{ width: "100%", height: 380, padding: "20px 28px", borderTop: "none", borderRight: "none", borderLeft: "none", borderBottom: `2px solid ${C.brand}`, background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.text, resize: "none", outline: "none", display: "block" }}
+            style={{ width: "100%", height: 380, padding: "20px 28px", border: "none", borderBottom: `2px solid ${C.brand}`, background: "#FFFFFF", fontFamily: "'Space Mono',monospace", fontSize: 13, color: "#114280", resize: "none", outline: "none", display: "block" }}
           />
         ) : (
-          <div style={{ width: "100%", height: 380, overflowY: "auto", padding: "20px 28px", background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.textMid, whiteSpace: "pre-wrap", borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ width: "100%", height: 380, overflowY: "auto", padding: "20px 28px", background: "#FFFFFF", fontFamily: "'Space Mono',monospace", fontSize: 13, color: "#114280", whiteSpace: "pre-wrap", borderBottom: `1px solid ${C.border}` }}>
             {JSON.stringify(currentProfile, null, 2)}
           </div>
         )}
@@ -1787,6 +1953,7 @@ function SettingsPage({ currentProfile, setCurrentProfile, systemProfiles }) {
 export default function OsirisApp() {
   const [page, setPage] = useState("monitor");
   const [focusAlert, setFocusAlert] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Real data state
   const [globalAlerts, setGlobalAlerts] = useState([]);
@@ -1926,9 +2093,21 @@ export default function OsirisApp() {
 
       <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         <Sidebar page={page} setPage={setPage} currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bg, height: "100vh", overflow: "hidden" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bg, height: "100vh", overflow: "hidden", position: "relative" }}>
           <TickerTape alerts={globalAlerts} />
-          <Topbar title={meta.title} subtitle={meta.subtitle} flash={showToast !== null} />
+          <Topbar
+            title={meta.title}
+            subtitle={meta.subtitle}
+            flash={showToast !== null}
+            action={
+              <button
+                onClick={() => setChatOpen(!chatOpen)}
+                style={{ height: 32, padding: "0 12px", borderRadius: 6, border: `1px solid ${C.brand}`, background: chatOpen ? C.brand : "transparent", color: chatOpen ? "#12263A" : C.brand, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace", transition: "all 0.2s" }}
+              >
+                Ask OSIRIS
+              </button>
+            }
+          />
 
           {showToast && (
             <div style={{ position: "absolute", top: 16, right: 300, background: C.sidebar, border: `2px solid ${C.brand}`, color: "#FFFFFF", padding: "12px 18px", fontSize: 12, fontWeight: 700, zIndex: 9999, transition: "opacity 0.3s", boxShadow: "0 4px 24px rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.04em" }}>
@@ -1944,17 +2123,19 @@ export default function OsirisApp() {
             <div style={{ flex: 1, overflowY: "auto" }}>
               {/* the pages need globalAlerts now instead of relying directly on ACTIVE_ALERTS */}
               {page === "monitor" && <MonitorPage onAnalyze={handleAnalyze} globalAlerts={globalAlerts} currentProfile={currentProfile} />}
-              {page === "analysis" && <AnalysisPage focusAlert={focusAlert} globalAlerts={globalAlerts} currentProfile={currentProfile} />}
+              {page === "analysis" && <AnalysisPage focusAlert={focusAlert} globalAlerts={globalAlerts} currentProfile={currentProfile} chatOpen={chatOpen} />}
               {page === "playbook" && <PlaybookPage globalAlerts={globalAlerts} />}
               {page === "suppliers" && <SuppliersPage globalSuppliers={globalSuppliers} currentProfile={currentProfile} />}
               {page === "audit" && <AuditPage globalAuditLogs={globalAuditLogs} />}
               {page === "settings" && <SettingsPage currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} systemProfiles={systemProfiles} />}
+              <div style={{ height: 100, flexShrink: 0 }} />
             </div>
           )}
         </div>
       </div>
 
-      {!loading && <AlertWidget onViewDashboard={handleViewAlert} globalAlerts={globalAlerts} />}
+      {!loading && <AlertWidget onViewDashboard={handleViewAlert} globalAlerts={globalAlerts} chatOpen={chatOpen} />}
+      <AskOsirisSidebar open={chatOpen} selectedAlert={focusAlert} profile={currentProfile} />
     </>
   );
 }
