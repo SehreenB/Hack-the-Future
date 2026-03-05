@@ -628,6 +628,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
   const [supplierHealth, setSupplierHealth] = useState(null);
 
   const [forecast, setForecast] = useState(null);
+  const [forecastProvider, setForecastProvider] = useState(null);
   const [isLoadingForecast, setIsLoadingForecast] = useState(false);
 
   // Re-sync if globalAlerts updates
@@ -639,6 +640,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
 
   useEffect(() => {
     setForecast(null);
+    setForecastProvider(null);
   }, [selected]);
 
   useEffect(() => {
@@ -703,7 +705,8 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
   const handleGenerateForecast = async () => {
     setIsLoadingForecast(true);
     const result = await getSituationForecast(selected, currentProfile || MANUFACTURER);
-    setForecast(result);
+    setForecast(result.forecast);
+    setForecastProvider(result.provider);
     setIsLoadingForecast(false);
   };
 
@@ -1040,7 +1043,18 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       {/* Intelligence Forecast */}
       <div style={{ background: "#0F172A", borderRadius: 12, padding: "18px 22px", border: `1px solid rgb(51, 65, 85)`, marginTop: 18, color: "#E2E8F0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: forecast || isLoadingForecast ? 14 : 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: C.medium, fontFamily: "'Fira Code', monospace", letterSpacing: "0.05em" }}>[ FORECAST // 24H OUTLOOK ]</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: C.medium, fontFamily: "'Fira Code', monospace", letterSpacing: "0.05em" }}>[ FORECAST // 24H OUTLOOK ]</div>
+            {forecast && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, background: "rgba(255,255,255,0.05)", padding: "4px 8px", borderRadius: 6, color: "#94A3B8" }}>
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: forecastProvider === 'gemini' ? "#4285F4" : (forecastProvider === 'claude' ? "#D97757" : "#64748B")
+                }} />
+                Powered by {forecastProvider === 'gemini' ? 'Gemini' : (forecastProvider === 'claude' ? 'Claude' : 'Mock Data')}
+              </div>
+            )}
+          </div>
           {!forecast && !isLoadingForecast && (
             <button
               onClick={handleGenerateForecast}
