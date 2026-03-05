@@ -589,7 +589,8 @@ Summary: ${selectedAlert?.summary || "No specific alert selected. Answer general
         {messages.length === 0 && (
           <div style={{ textAlign: "center", color: C.textMid, fontSize: 12, marginTop: 40, fontFamily: "'Space Mono',monospace" }}>
             <div style={{ fontSize: 24, marginBottom: 8, color: C.brand }}>✦</div>
-            OSIRIS is online.<br /><br />Ask about {selectedAlert?.id}.
+            OSIRIS is online.<br /><br />
+            {selectedAlert?.id ? `Ask about ${selectedAlert.id}.` : "Ask about your supply chain."}
           </div>
         )}
 
