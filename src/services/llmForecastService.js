@@ -38,7 +38,7 @@ Output format: Please output ONLY the summary text. No introductory or closing r
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.3, maxOutputTokens: 400 }
+                    generationConfig: { temperature: 0.3, maxOutputTokens: 1200 }
                 })
             });
 
