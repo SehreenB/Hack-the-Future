@@ -375,7 +375,7 @@ function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
       {/* Profile Switcher */}
       <div style={{ padding: "16px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginBottom: 2, paddingLeft: 4 }}>ACTIVE PROFILE</div>
-        {(page === "settings" ? undefined : (window.systemProfiles || PROFILES)).map(p => {
+        {(page === "settings" ? [] : (window.systemProfiles || PROFILES)).map(p => {
           const isActive = currentProfile.name === p.name;
           return (
             <button key={p.name} onClick={() => setCurrentProfile(p)}

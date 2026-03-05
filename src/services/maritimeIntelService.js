@@ -37,7 +37,7 @@ export async function getMaritimeWarnings(corridors = ["Taiwan", "Red Sea", "Pac
 
         return warnings.length;
     } catch (err) {
-        console.error("[MaritimeIntel] Error fetching live warnings:", err.message);
+        console.warn("[MaritimeIntel] Error fetching live warnings, falling back to mock:", err.message);
         return getMockWarnings();
     }
 }
