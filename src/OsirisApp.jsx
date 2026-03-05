@@ -432,11 +432,42 @@ function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
 
       {/* WorldMonitor Link */}
       <div style={{ padding: "12px", margin: "0 8px" }}>
+        <style>{`
+          @keyframes globeRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          @keyframes globeOrbit { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+          @keyframes globePulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+        `}</style>
         <button onClick={() => window.location.href = '/world-monitor'}
           style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 7, border: `1px solid rgba(48,188,237,0.2)`, background: `rgba(48,188,237,0.07)`, color: C.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", textAlign: "left", fontFamily: "'Space Grotesk',sans-serif", transition: "all 0.15s" }}
           onMouseOver={(e) => { e.currentTarget.style.background = `rgba(48,188,237,0.14)`; }}
           onMouseOut={(e) => { e.currentTarget.style.background = `rgba(48,188,237,0.07)`; }}>
-          <span style={{ fontSize: 11, fontFamily: "'Space Mono',monospace" }}>WORLD</span>
+          {/* Animated rotating globe from 21st.dev */}
+          <div style={{ width: 22, height: 22, flexShrink: 0, position: "relative" }}>
+            <svg viewBox="0 0 24 24" width="22" height="22" style={{ display: "block" }}>
+              <defs>
+                <radialGradient id="globeGrad" cx="35%" cy="35%" r="65%">
+                  <stop offset="0%" stopColor="#5ef0ff" stopOpacity="0.9" />
+                  <stop offset="60%" stopColor="#30bced" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#0d4a6e" stopOpacity="1" />
+                </radialGradient>
+                <clipPath id="globeClip">
+                  <circle cx="12" cy="12" r="10" />
+                </clipPath>
+              </defs>
+              <circle cx="12" cy="12" r="10" fill="url(#globeGrad)" stroke="rgba(48,188,237,0.5)" strokeWidth="0.5" />
+              {/* Latitude lines */}
+              <ellipse cx="12" cy="12" rx="10" ry="3.5" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" clipPath="url(#globeClip)" />
+              <ellipse cx="12" cy="12" rx="10" ry="7" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" clipPath="url(#globeClip)" />
+              <line x1="2" y1="12" x2="22" y2="12" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" clipPath="url(#globeClip)" />
+              {/* Rotating longitude line */}
+              <ellipse cx="12" cy="12" rx="4" ry="10" fill="none" stroke="rgba(94,240,255,0.6)" strokeWidth="0.7" clipPath="url(#globeClip)"
+                style={{ transformOrigin: "12px 12px", animation: "globeRotate 3s linear infinite" }} />
+              <ellipse cx="12" cy="12" rx="8" ry="10" fill="none" stroke="rgba(48,188,237,0.3)" strokeWidth="0.5" clipPath="url(#globeClip)"
+                style={{ transformOrigin: "12px 12px", animation: "globeRotate 5s linear infinite reverse" }} />
+              {/* Highlight */}
+              <circle cx="9" cy="9" r="2.5" fill="rgba(255,255,255,0.12)" />
+            </svg>
+          </div>
           View WorldMonitor
         </button>
       </div>
@@ -1805,7 +1836,7 @@ export default function OsirisApp() {
           <Topbar title={meta.title} subtitle={meta.subtitle} flash={showToast !== null} />
 
           {showToast && (
-            <div style={{ position: "absolute", top: 16, right: 300, background: C.sidebar, border: `2px solid ${C.brand}`, color: C.text, padding: "12px 18px", fontSize: 12, fontWeight: 700, zIndex: 9999, transition: "opacity 0.3s", boxShadow: "0 4px 24px rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.04em" }}>
+            <div style={{ position: "absolute", top: 16, right: 300, background: C.sidebar, border: `2px solid ${C.brand}`, color: "#FFFFFF", padding: "12px 18px", fontSize: 12, fontWeight: 700, zIndex: 9999, transition: "opacity 0.3s", boxShadow: "0 4px 24px rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.04em" }}>
               {showToast}
             </div>
           )}
