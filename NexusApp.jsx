@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs } from "./src/services/supabaseService";
+import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs, getProfiles, saveProfile, getActiveProfileId, setActiveProfileId } from "./src/services/supabaseService";
 import { getSupplierFinancialHealth } from "./src/services/financialHealthService";
 import { getMaritimeWarnings } from "./src/services/maritimeIntelService";
 import { getSituationForecast } from "./src/services/llmForecastService";
@@ -49,6 +49,42 @@ const MANUFACTURER = {
     { role: "CFO", name: "Dr. Aisha Patel", phone: "+1-416-555-0201" },
   ],
 };
+
+const RHEINWERK_PROFILE = {
+  name: "Rheinwerk Automotive GmbH",
+  industry: "Automotive Parts Manufacturing",
+  dailyRevenue: "$524K",
+  sites: ["Stuttgart, DE", "Munich, DE", "Prague, CZ"],
+  logisticsCorridors: ["Suez Canal", "Rhine Corridor", "Mediterranean Sea"],
+  geopoliticalRisks: { Germany: 5, China: 30, Turkey: 20, Poland: 10, UAE: 15 },
+  escalationContacts: [
+    { role: "Ops Lead", name: "Hans Weber", phone: "+49-151-555-0142" },
+    { role: "Procurement Director", name: "Ingrid Müller", phone: "+49-151-555-0198" },
+    { role: "CFO", name: "Dr. Klaus Hoffmann", phone: "+49-151-555-0201" },
+  ],
+  supplierConcentrationRisk: "High — 68% of polymer inputs from single BASF facility",
+  leadTimeSensitivity: "Critical — 4 day buffer on specialty steel components",
+  inventoryPolicy: "21-day safety stock on Tier-1 components"
+};
+
+const MONTERREY_PROFILE = {
+  name: "Grupo Monterrey Industrial",
+  industry: "Industrial Components Manufacturing",
+  dailyRevenue: "$187K",
+  sites: ["Monterrey, MX", "Guadalajara, MX", "El Paso, TX"],
+  logisticsCorridors: ["US-Mexico Border", "Gulf of Mexico", "Trans-Pacific"],
+  geopoliticalRisks: { Mexico: 20, USA: 10, China: 15, Brazil: 10, Canada: 5 },
+  escalationContacts: [
+    { role: "Ops Lead", name: "Carlos Reyes", phone: "+52-81-555-0142" },
+    { role: "Procurement Director", name: "Sofia Mendoza", phone: "+52-81-555-0198" },
+    { role: "CFO", name: "Alejandro Torres", phone: "+52-81-555-0201" },
+  ],
+  supplierConcentrationRisk: "Low — diversified across 12 approved Tier-1 suppliers",
+  leadTimeSensitivity: "Moderate — 14 day buffer on most components",
+  inventoryPolicy: "35-day safety stock — conservative buffer strategy"
+};
+
+const PROFILES = [MANUFACTURER, RHEINWERK_PROFILE, MONTERREY_PROFILE];
 
 const ACTIVE_ALERTS = [
   {
@@ -101,13 +137,31 @@ const AUDIT_LOG_MOCK = [
   { id: "NXS-003", ts: "09:44 AM", supplier: "BASF Corp", region: "Gulf Coast", risk: 54, confidence: 76, tier: 3, escalated: false },
 ];
 
-const SUPPLIER_MAP_PINS = [
+const PINS_NORTHSTAR = [
   { id: "SUP-001", name: "TSMC", lat: 24.15, lng: 120.67, risk: 87, commodity: "Semiconductors", status: "critical" },
   { id: "SUP-002", name: "Hon Hai", lat: 22.32, lng: 114.17, risk: 82, commodity: "PCB Assembly", status: "critical" },
   { id: "SUP-003", name: "BASF", lat: 28.98, lng: -95.37, risk: 54, commodity: "Polymers", status: "medium" },
   { id: "SUP-004", name: "Murata", lat: 35.01, lng: 135.77, risk: 28, commodity: "Passives", status: "low" },
   { id: "SUP-005", name: "Flex Ltd", lat: 20.66, lng: -103.35, risk: 22, commodity: "Assembly", status: "low" },
+];
 
+const PINS_RHEINWERK = [
+  { id: "SUP-R01", name: "Stuttgart Assembly", lat: 48.77, lng: 9.18, risk: 42, commodity: "Final Assembly", status: "medium" },
+  { id: "SUP-R02", name: "BASF Freeport", lat: 28.98, lng: -95.37, risk: 85, commodity: "Polymers", status: "critical" },
+  { id: "SUP-R03", name: "Suez Transit", lat: 29.93, lng: 32.56, risk: 88, commodity: "Logistics", status: "critical" },
+  { id: "SUP-R04", name: "Istanbul Hub", lat: 41.00, lng: 28.97, risk: 65, commodity: "Metals", status: "high" },
+  { id: "SUP-R05", name: "Prague Plant", lat: 50.07, lng: 14.43, risk: 25, commodity: "Electronics", status: "low" },
+];
+
+const PINS_MONTERREY = [
+  { id: "SUP-M01", name: "Monterrey HQ", lat: 25.68, lng: -100.31, risk: 45, commodity: "Final Assembly", status: "medium" },
+  { id: "SUP-M02", name: "Guadalajara Setup", lat: 20.65, lng: -103.34, risk: 38, commodity: "Components", status: "low" },
+  { id: "SUP-M03", name: "El Paso Crossing", lat: 31.76, lng: -106.48, risk: 82, commodity: "Logistics", status: "critical" },
+  { id: "SUP-M04", name: "Gulf Ports", lat: 28.3, lng: -89.0, risk: 65, commodity: "Shipping", status: "high" },
+  { id: "SUP-M05", name: "Panama Transit", lat: 9.1, lng: -79.6, risk: 75, commodity: "Shipping", status: "high" },
+];
+
+const SIMULATED_WORLD_IMPACTS = [
   // Simulated WorldMonitor Global Impacts
   { id: "IMP-001", name: "Sahel Insurgency", lat: 14.0, lng: -1.0, risk: 85, commodity: "Minerals", status: "critical" },
   { id: "IMP-002", name: "Haiti Crisis", lat: 18.5, lng: -72.3, risk: 78, commodity: "Logistics", status: "high" },
@@ -293,14 +347,14 @@ function AlertWidget({ onViewDashboard, globalAlerts }) {
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
-function Sidebar({ page, setPage }) {
+function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
   const nav = [
     { id: "monitor", icon: "⬡", label: "Live Monitor" },
     { id: "analysis", icon: "◎", label: "Risk Analysis" },
     { id: "playbook", icon: "◈", label: "Playbook" },
     { id: "suppliers", icon: "◻", label: "Supplier Map" },
     { id: "audit", icon: "∿", label: "Audit Log" },
-    { id: "settings", icon: "⚙", label: "Settings" },
+    { id: "settings", icon: "⚙", label: "Settings & Context" },
   ];
 
   return (
@@ -318,15 +372,19 @@ function Sidebar({ page, setPage }) {
         </div>
       </div>
 
-      {/* Manufacturer */}
-      <div style={{ padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginBottom: 6 }}>ACTIVE PROFILE</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{MANUFACTURER.name}</div>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{MANUFACTURER.industry}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8 }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", flexShrink: 0 }} />
-          <span style={{ fontSize: 10, color: "#10B981" }}>Demo Mode Active</span>
-        </div>
+      {/* Profile Switcher */}
+      <div style={{ padding: "16px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginBottom: 2, paddingLeft: 4 }}>ACTIVE PROFILE</div>
+        {(page === "settings" ? undefined : (window.systemProfiles || PROFILES)).map(p => {
+          const isActive = currentProfile.name === p.name;
+          return (
+            <button key={p.name} onClick={() => setCurrentProfile(p)}
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "none", background: isActive ? "rgba(255,255,255,0.06)" : "transparent", cursor: "pointer", textAlign: "left", transition: "all 0.15s", borderLeft: isActive ? `3px solid ${C.brand}` : "3px solid transparent" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.5)" }}>{p.name}</div>
+              <div style={{ fontSize: 10, color: isActive ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)", marginTop: 2 }}>{p.industry}</div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Nav */}
@@ -369,9 +427,9 @@ function Sidebar({ page, setPage }) {
 }
 
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
-function Topbar({ title, subtitle }) {
+function Topbar({ title, subtitle, flash }) {
   return (
-    <header style={{ height: 58, background: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 50, fontFamily: "'Fira Sans',sans-serif" }}>
+    <header style={{ height: 58, background: C.card, borderBottom: `1px solid ${flash ? C.brand : C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 50, fontFamily: "'Fira Sans',sans-serif", transition: "border-color 0.3s ease" }}>
       <div>
         <div style={{ fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: "-0.01em", fontFamily: "'Fira Code',sans-serif" }}>{title}</div>
         {subtitle && <div style={{ fontSize: 11, color: C.textLight, marginTop: 1 }}>{subtitle}</div>}
@@ -391,7 +449,7 @@ function Topbar({ title, subtitle }) {
 }
 
 // ─── LIVE MONITOR PAGE ────────────────────────────────────────────────────────
-function MonitorPage({ onAnalyze, globalAlerts }) {
+function MonitorPage({ onAnalyze, globalAlerts, currentProfile }) {
   const alertsToUse = globalAlerts && globalAlerts.length > 0 ? globalAlerts : ACTIVE_ALERTS;
   const [analyzing, setAnalyzing] = useState(false);
   const [status, setStatus] = useState("");
@@ -491,7 +549,12 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
         {[
           { label: "Active Disruptions", value: String(alertsToUse.length), sub: "↑ from last 24h", color: C.critical },
-          { label: "Revenue at Risk", value: "$6.6M", sub: "Across all active alerts", color: C.high },
+          {
+            label: "Revenue at Risk",
+            value: `$${(parseFloat(String(currentProfile.dailyRevenue).replace(/[^0-9.]/g, '')) * 17 / 1000).toFixed(1)}M`,
+            sub: "Across all active alerts",
+            color: C.high
+          },
           { label: "Critical Suppliers", value: "2", sub: "< 10 days stockout", color: C.critical },
           { label: "Avg Confidence", value: "84%", sub: "Above escalation threshold", color: C.success },
         ].map(k => (
@@ -687,7 +750,13 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
         const url = URL.createObjectURL(audioBlob);
         const audio = new Audio(url);
         voiceAudioRef.current = audio;
-        audio.play();
+
+        audio.play().catch(err => {
+          console.error("Audio playback error:", err);
+          setVoiceError("Audio playback failed. The key may be invalid or the browser blocked it.");
+          setVoiceStatus("previewed");
+        });
+
         audio.onended = () => {
           setVoiceStatus("previewed");
         };
@@ -1308,7 +1377,11 @@ function PlaybookPage({ globalAlerts }) {
 
 // ─── SUPPLIER MAP PAGE ────────────────────────────────────────────────────────
 function SuppliersPage({ globalSuppliers, currentProfile }) {
-  const pinsToUse = globalSuppliers && globalSuppliers.length > 0 ? globalSuppliers : SUPPLIER_MAP_PINS;
+  const defaultPins = currentProfile.name === "Rheinwerk Automotive GmbH" ? PINS_RHEINWERK :
+    currentProfile.name === "Grupo Monterrey Industrial" ? PINS_MONTERREY : PINS_NORTHSTAR;
+
+  // Use globalSuppliers if it's an array with items, otherwise use the profile defaults
+  const pinsToUse = Array.isArray(globalSuppliers) && globalSuppliers.length > 0 ? globalSuppliers : defaultPins;
   const [warningCount, setWarningCount] = useState(0);
 
   useEffect(() => {
@@ -1466,41 +1539,97 @@ function AuditPage({ globalAuditLogs }) {
   );
 }
 
-// ─── SETTINGS PAGE ────────────────────────────────────────────────────────────
-function SettingsPage({ currentProfile, setCurrentProfile }) {
+// ─── SETTINGS PAGE ──────────────────────────────────────────────────────────────
+function SettingsPage({ currentProfile, setCurrentProfile, systemProfiles }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     setDraft(JSON.stringify(currentProfile, null, 2));
   }, [currentProfile, editing]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       const parsed = JSON.parse(draft);
       setCurrentProfile(parsed);
       setEditing(false);
+      await saveProfile(parsed.name, parsed);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (e) {
       alert("Invalid JSON format. Please correct it before saving.");
+    }
+  };
+
+  const handleReset = async () => {
+    setResetting(true);
+    const defaultProfile = PROFILES.find(p => p.name === currentProfile.name);
+    if (defaultProfile) {
+      await saveProfile(currentProfile.name, defaultProfile);
+      setCurrentProfile(defaultProfile);
+      setDraft(JSON.stringify(defaultProfile, null, 2));
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+    setResetting(false);
+  };
+
+  const handleProfileSelect = (e) => {
+    const selectedName = e.target.value;
+    const selected = (systemProfiles || PROFILES).find(p => p.name === selectedName);
+    if (selected) {
+      setCurrentProfile(selected);
+      setDraft(JSON.stringify(selected, null, 2));
     }
   };
 
   return (
     <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 800 }}>
       <div style={{ background: C.card, borderRadius: 12, padding: "24px", border: `1px solid ${C.border} ` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Manufacturer Context Profile</div>
             <div style={{ fontSize: 12, color: C.textMid, marginTop: 4 }}>This JSON context grounds the AI risk engine's logic (Hyper-Personalization).</div>
-          </div>
-          {!editing ? (
-            <button onClick={() => setEditing(true)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.text, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Edit JSON</button>
-          ) : (
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { setEditing(false); setDraft(JSON.stringify(currentProfile, null, 2)); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleSave} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Save Profile</button>
+
+            <div style={{ marginTop: 16 }}>
+              <select
+                value={currentProfile.name}
+                onChange={handleProfileSelect}
+                disabled={editing}
+                style={{
+                  background: C.bg,
+                  color: C.text,
+                  border: `1px solid ${C.border}`,
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  outline: "none",
+                  cursor: editing ? "not-allowed" : "pointer",
+                  opacity: editing ? 0.5 : 1,
+                  fontFamily: "'DM Sans', sans-serif"
+                }}
+              >
+                {(systemProfiles || PROFILES).map(p => (
+                  <option key={p.name} value={p.name}>{p.name}</option>
+                ))}
+              </select>
             </div>
-          )}
+          </div>
+          <div>
+            {!editing ? (
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                {saveSuccess && <span style={{ fontSize: 12, fontWeight: 700, color: C.success, display: "flex", alignItems: "center", gap: 4 }}><Icons.CheckCircle /> Saved to cloud</span>}
+                <button onClick={handleReset} disabled={resetting} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.text, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{resetting ? "Resetting..." : "Reset to Default"}</button>
+                <button onClick={() => setEditing(true)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.text, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Edit JSON</button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <button onClick={() => { setEditing(false); setDraft(JSON.stringify(currentProfile, null, 2)); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+                <button onClick={handleSave} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Save Profile</button>
+              </div>
+            )}
+          </div>
         </div>
 
         {editing ? (
@@ -1528,18 +1657,48 @@ export default function NexusApp() {
   const [globalAlerts, setGlobalAlerts] = useState([]);
   const [globalSuppliers, setGlobalSuppliers] = useState([]);
   const [globalAuditLogs, setGlobalAuditLogs] = useState([]);
-  const [currentProfile, setCurrentProfile] = useState(MANUFACTURER);
+  const [systemProfiles, setSystemProfiles] = useState(PROFILES);
+
+  // Profile selection state (loaded from Supabase)
+  const [currentProfile, setCurrentProfileState] = useState(MANUFACTURER);
+  const [showToast, setShowToast] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const setCurrentProfile = (profile) => {
+    setCurrentProfileState(profile);
+    setActiveProfileId(profile.name);
+    setShowToast(`Profile switched to ${profile.name} — all risk calculations updated`);
+    setTimeout(() => setShowToast(null), 3000);
+  };
 
   // Fetch from supabase logic
   useEffect(() => {
     async function loadData() {
-      // getDisruptionHistory returns recently created disruptions from db
-      const [data, suppliersData, auditData] = await Promise.all([
+      // Fetch disruptions + profiles + active profile ID concurrently
+      const [data, suppliersData, auditData, dbProfiles, activeId] = await Promise.all([
         getDisruptionHistory(50),
         getSuppliers(),
-        getAuditLogs(100)
+        getAuditLogs(100),
+        getProfiles(),
+        getActiveProfileId()
       ]);
+
+      let profilesToUse = PROFILES;
+      if (dbProfiles && dbProfiles.length > 0) {
+        profilesToUse = dbProfiles.map(p => ({
+          ...p.profile_data,
+          name: p.name
+        }));
+        setSystemProfiles(profilesToUse);
+        window.systemProfiles = profilesToUse; // expose for sidebar
+      } else if (dbProfiles && dbProfiles.length === 0) {
+        // DB empty, seed it
+        await Promise.all(PROFILES.map(p => saveProfile(p.name, p)));
+        await setActiveProfileId("NorthStar Electronics");
+      }
+
+      const active = activeId ? profilesToUse.find(p => p.name === activeId) : profilesToUse.find(p => p.name === "NorthStar Electronics");
+      setCurrentProfileState(active || profilesToUse[0]);
 
       if (suppliersData && suppliersData.length > 0) {
         setGlobalSuppliers(suppliersData);
@@ -1592,7 +1751,7 @@ export default function NexusApp() {
   const handleAnalyze = (alert) => { setFocusAlert(alert); setPage("analysis"); };
 
   const PAGE_META = {
-    monitor: { title: "Live Disruption Monitor", subtitle: `${MANUFACTURER.name} · ${new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ` },
+    monitor: { title: "Live Disruption Monitor", subtitle: `${currentProfile.name} · ${new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ` },
     analysis: { title: "Risk Analysis & Playbook", subtitle: "Full 11-step OSIRIS workflow output" },
     playbook: { title: "Playbook Library", subtitle: "Historical mitigations and outcomes" },
     suppliers: { title: "Supplier Risk Map", subtitle: "Global supplier exposure overview" },
@@ -1619,9 +1778,15 @@ export default function NexusApp() {
 `}</style>
 
       <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-        <Sidebar page={page} setPage={setPage} />
+        <Sidebar page={page} setPage={setPage} currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bg, height: "100vh", overflow: "hidden" }}>
-          <Topbar title={meta.title} subtitle={meta.subtitle} />
+          <Topbar title={meta.title} subtitle={meta.subtitle} flash={showToast !== null} />
+
+          {showToast && (
+            <div style={{ position: "absolute", top: 16, right: 300, background: C.card, border: `1px solid ${C.brand}`, color: C.text, padding: "12px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, zIndex: 9999, transition: "opacity 0.3s", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
+              {showToast}
+            </div>
+          )}
 
           {loading ? (
             <div style={{ padding: "40px", textAlign: "center", color: C.textMid, fontFamily: "'Fira Code',sans-serif" }}>
@@ -1630,12 +1795,12 @@ export default function NexusApp() {
           ) : (
             <div style={{ flex: 1, overflowY: "auto" }}>
               {/* the pages need globalAlerts now instead of relying directly on ACTIVE_ALERTS */}
-              {page === "monitor" && <MonitorPage onAnalyze={handleAnalyze} globalAlerts={globalAlerts} />}
+              {page === "monitor" && <MonitorPage onAnalyze={handleAnalyze} globalAlerts={globalAlerts} currentProfile={currentProfile} />}
               {page === "analysis" && <AnalysisPage focusAlert={focusAlert} globalAlerts={globalAlerts} currentProfile={currentProfile} />}
               {page === "playbook" && <PlaybookPage globalAlerts={globalAlerts} />}
               {page === "suppliers" && <SuppliersPage globalSuppliers={globalSuppliers} currentProfile={currentProfile} />}
               {page === "audit" && <AuditPage globalAuditLogs={globalAuditLogs} />}
-              {page === "settings" && <SettingsPage currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} />}
+              {page === "settings" && <SettingsPage currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} systemProfiles={systemProfiles} />}
             </div>
           )}
         </div>

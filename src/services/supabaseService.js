@@ -56,6 +56,21 @@
 //   ip_address text
 // );
 //
+// -- Manufacturer profiles
+// create table manufacturer_profiles (
+//   id uuid default gen_random_uuid() primary key,
+//   name text unique not null,
+//   profile_data jsonb not null,
+//   updated_at timestamptz default now()
+// );
+//
+// -- App settings
+// create table app_settings (
+//   key text primary key,
+//   value text,
+//   updated_at timestamptz default now()
+// );
+//
 // -- Real-time subscription setup:
 // -- Enable Replication for: disruptions, audit_log
 //
@@ -265,5 +280,70 @@ export async function getSuppliers() {
   return data || [];
 }
 
+// ── PROFILE PERSISTENCE ───────────────────────────────────────────────────────
+
+export async function getProfiles() {
+  const client = await getClient();
+  if (!client) {
+    console.warn("[Profiles] Supabase unavailable — using hardcoded defaults.");
+    return null;
+  }
+  const { data, error } = await client.from("manufacturer_profiles").select("id, name, profile_data, updated_at");
+  if (error) {
+    console.warn("[Profiles] Supabase error:", error.message, "— using hardcoded defaults.");
+    return null;
+  }
+  return data;
+}
+
+export async function saveProfile(name, profileData) {
+  const client = await getClient();
+  if (!client) {
+    console.warn("[Profiles] Supabase unavailable — using hardcoded defaults.");
+    return null;
+  }
+  const { data, error } = await client.from("manufacturer_profiles").upsert({
+    name,
+    profile_data: profileData,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'name' }).select();
+  if (error) {
+    console.warn("[Profiles] Supabase error:", error.message, "— using hardcoded defaults.");
+    return null;
+  }
+  return data;
+}
+
+export async function getActiveProfileId() {
+  const client = await getClient();
+  if (!client) {
+    console.warn("[Profiles] Supabase unavailable — using hardcoded defaults.");
+    return null;
+  }
+  const { data, error } = await client.from("app_settings").select("value").eq("key", "active_profile_id").single();
+  if (error) {
+    console.warn("[Profiles] Supabase error:", error.message, "— using hardcoded defaults.");
+    return null;
+  }
+  return data?.value;
+}
+
+export async function setActiveProfileId(name) {
+  const client = await getClient();
+  if (!client) {
+    console.warn("[Profiles] Supabase unavailable — using hardcoded defaults.");
+    return null;
+  }
+  const { data, error } = await client.from("app_settings").upsert({
+    key: "active_profile_id",
+    value: name,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'key' }).select();
+  if (error) {
+    console.warn("[Profiles] Supabase error:", error.message, "— using hardcoded defaults.");
+    return null;
+  }
+  return data;
+}
 
 export { memoryStore };
