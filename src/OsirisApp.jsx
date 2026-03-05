@@ -308,10 +308,10 @@ function AlertWidget({ onViewDashboard, globalAlerts, chatOpen }) {
                 <button key={a.id} onClick={() => setActive(a)}
                   style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", border: "none", cursor: "pointer", background: isActive ? c.bg : "transparent", borderLeft: `3px solid ${isActive ? c.color : "transparent"}`, textAlign: "left", fontFamily: "'Space Grotesk',sans-serif" }}>
                   <span style={{ width: 7, height: 7, borderRadius: 2, background: c.color, flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: C.text }}>{a.title}</span>
+                  <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: "#FFFFFF" }}>{a.title}</span>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: c.color, fontFamily: "'Space Mono',monospace" }}>{c.label.toUpperCase()}</span>
-                    <span style={{ fontSize: 9, color: C.textLight }}>{a.detectedAt}</span>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)" }}>{a.detectedAt}</span>
                   </div>
                 </button>
               );
@@ -322,22 +322,22 @@ function AlertWidget({ onViewDashboard, globalAlerts, chatOpen }) {
           <div style={{ margin: "12px", borderRadius: 8, padding: "14px 15px", background: cfg.bg, border: `1px solid ${cfg.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 3 }}>{active.title}</div>
-                <div style={{ fontSize: 11, color: C.textMid }}>{active.supplier} · {active.region}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", lineHeight: 1.3, marginBottom: 3 }}>{active.title}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>{active.supplier} · {active.region}</div>
               </div>
               <div style={{ width: 44, height: 44, borderRadius: 8, background: cfg.color, color: "white", fontSize: 16, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 10, fontFamily: "'Space Mono',monospace" }}>{active.riskScore}</div>
             </div>
-            <p style={{ fontSize: 12, color: C.textMid, lineHeight: 1.6, margin: "8px 0 12px" }}>{active.summary.slice(0, 160)}...</p>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, margin: "8px 0 12px" }}>{active.summary.slice(0, 160)}...</p>
             <div style={{ display: "flex", gap: 18 }}>
-              {[["Revenue at Risk", active.revenueAtRisk, cfg.color], ["Confidence", `${active.confidenceScore}%`, C.text], ["Days to Stockout", `${active.daysToStockout}d`, active.daysToStockout < 10 ? C.critical : C.high]].map(([l, v, c]) => (
-                <div key={l}><div style={{ fontSize: 9, color: C.textLight, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "'Space Mono',monospace" }}>{l}</div><div style={{ fontSize: 13, fontWeight: 700, color: c, fontFamily: "'Space Mono',monospace" }}>{v}</div></div>
+              {[["Revenue at Risk", active.revenueAtRisk, cfg.color], ["Confidence", `${active.confidenceScore}%`, "#FFFFFF"], ["Days to Stockout", `${active.daysToStockout}d`, active.daysToStockout < 10 ? C.critical : C.high]].map(([l, v, c]) => (
+                <div key={l}><div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "'Space Mono',monospace" }}>{l}</div><div style={{ fontSize: 13, fontWeight: 700, color: c, fontFamily: "'Space Mono',monospace" }}>{v}</div></div>
               ))}
             </div>
           </div>
 
           {/* Footer */}
           <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderTop: `1px solid rgba(254,197,2,0.08)` }}>
-            <button onClick={() => setDismissed(true)} style={{ flex: 1, padding: "9px", borderRadius: 6, border: `1px solid rgba(255,255,255,0.1)`, background: "transparent", color: C.textMid, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif" }}>Dismiss</button>
+            <button onClick={() => setDismissed(true)} style={{ flex: 1, padding: "9px", borderRadius: 6, border: `1px solid rgba(255,255,255,0.1)`, background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif" }}>Dismiss</button>
             <button onClick={() => { onViewDashboard(active); setExpanded(false); }}
               style={{ flex: 2, padding: "9px 14px", borderRadius: 6, border: "none", background: cfg.color, color: cfg.color === C.brand ? "#12263A" : "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif" }}>
               View Full Analysis →
