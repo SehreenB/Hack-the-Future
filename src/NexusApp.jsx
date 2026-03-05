@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs, getProfiles, saveProfile, getActiveProfileId, setActiveProfileId } from "./src/services/supabaseService";
-import { getSupplierFinancialHealth } from "./src/services/financialHealthService";
-import { getMaritimeWarnings } from "./src/services/maritimeIntelService";
-import { getSituationForecast } from "./src/services/llmForecastService";
-import { buildCallScript, generateCallScriptAudio } from "./src/services/communicationService";
+import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs, getProfiles, saveProfile, getActiveProfileId, setActiveProfileId } from "./services/supabaseService";
+import { getSupplierFinancialHealth } from "./services/financialHealthService";
+import { getMaritimeWarnings } from "./services/maritimeIntelService";
+import { getSituationForecast } from "./services/llmForecastService";
+import { buildCallScript, generateCallScriptAudio } from "./services/communicationService";
 import Map, { Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 

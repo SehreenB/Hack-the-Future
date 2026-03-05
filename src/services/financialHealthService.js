@@ -25,12 +25,18 @@ export async function getSupplierFinancialHealth(ticker) {
     try {
         const url = `https://${RAPIDAPI_HOST}/api/v3/ratios/${ticker}`;
         const res = await fetch(url, { headers: BASE_HEADERS });
-        if (!res.ok) throw new Error(`Financial Modeling Prep error: ${res.status}`);
+        if (!res.ok) {
+            // Silently fallback on 404 to avoid console spam for missing international tickers like 2317.TW
+            if (res.status !== 404) {
+                console.warn(`[FinancialHealth] FMP API returned ${res.status} for ${ticker}`);
+            }
+            throw new Error(`Financial Modeling Prep error: ${res.status}`);
+        }
         const data = await res.json();
 
         return normalizeFinancialData(ticker, data);
     } catch (err) {
-        console.error("[FinancialHealth] Error:", err.message);
+        // Fallback to mock data on ANY error
         return getMockFinancialHealth(ticker);
     }
 }

@@ -20,8 +20,11 @@ Built on top of the original World Monitor core, OSIRIS shifts the focus from ge
 
 ## Technology Stack
 
-- **Frontend:** React, TypeScript, Vite
+- **Frontend:** React, TypeScript, Vite, Vite PWA (Service Workers)
 - **AI Engine:** Google Gemini 2.5 Flash (for real-time impact analysis and report generation)
+- **Data & Auth:** Supabase (Singleton Architecture)
+- **Financial APIs:** Financial Modeling Prep (via RapidAPI)
+- **Visualization:** MapLibre, Three.js (globe.gl)
 - **Styling:** Custom CSS with Glassmorphism / Dashboard constraints (`command-center.css`)
 
 ## Running Locally
@@ -33,15 +36,19 @@ To run the OSIRIS Command Center locally:
    ```bash
    npm install
    ```
-3. Set up your `.env.local` file by copying the provided example and adding your Gemini API key:
+3. Set up your `.env.local` file by copying the provided example and adding your API keys:
    ```env
    VITE_GEMINI_API_KEY=your_gemini_api_key_here
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_RAPIDAPI_KEY=your_rapidapi_key
    ```
+   *(Note: The app will use mocked data or fail gracefully if Supabase or RapidAPI keys are missing).*
 4. Start the Vite development server:
    ```bash
    npm run dev
    ```
-5. Navigate to `http://localhost:3000`
+5. Navigate to `http://localhost:3000` (or the port Vite outputs in your console).
 
 ## Story & Hackathon Value
 

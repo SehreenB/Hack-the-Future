@@ -80,9 +80,12 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Lazy supabase client — only init when keys are present
-let _client = null;
+let _client = null; // Keep this for now, as the instruction's `getClient` still references `_client`
+
+let _clientPromise = window.__SUPABASE_CLIENT_PROMISE__ || null;
 
 async function getClient() {
+  if (window.__SUPABASE_CLIENT__) return window.__SUPABASE_CLIENT__;
   if (_client) return _client;
 
   if (!SUPABASE_URL || SUPABASE_URL.includes("your-project")) {
@@ -90,14 +93,22 @@ async function getClient() {
     return null;
   }
 
-  try {
-    const { createClient } = await import("@supabase/supabase-js");
-    _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    return _client;
-  } catch {
-    console.warn("[Supabase] @supabase/supabase-js not installed. Run: npm install @supabase/supabase-js");
-    return null;
+  if (!_clientPromise) {
+    _clientPromise = (async () => {
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.__SUPABASE_CLIENT__ = _client;
+        return _client;
+      } catch {
+        console.warn("[Supabase] @supabase/supabase-js not installed. Run: npm install @supabase/supabase-js");
+        return null;
+      }
+    })();
+    window.__SUPABASE_CLIENT_PROMISE__ = _clientPromise;
   }
+
+  return _clientPromise;
 }
 
 // ── IN-MEMORY FALLBACK (when Supabase not configured) ─────────────────────────

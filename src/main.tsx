@@ -5,6 +5,13 @@ import * as Sentry from '@sentry/browser';
 import { inject } from '@vercel/analytics';
 import { App } from './App';
 
+// Squelch noisy THREE.js deprecation warnings coming from globe.gl dependencies
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === 'string' && args[0].includes('This module has been deprecated')) return;
+  originalWarn(...args);
+};
+
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN?.trim();
 
 // Initialize Sentry error tracking (early as possible)
@@ -253,6 +260,8 @@ localStorage.removeItem('wm-settings-open');
 // Both need i18n initialized so t() does not return undefined.
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+// @ts-ignore
+import NexusApp from './NexusApp.jsx';
 
 const urlParams = new URL(location.href).searchParams;
 if (urlParams.get('settings') === '1') {
@@ -283,17 +292,23 @@ if (urlParams.get('settings') === '1') {
     // Mount React App
     const reactRoot = document.createElement('div');
     reactRoot.id = 'sc-c2-root';
-    document.body.appendChild(reactRoot);
+    if (reactRoot) {
+      document.body.appendChild(reactRoot);
+      window.addEventListener('error', (e) => {
+        if (e.error) reactRoot.innerHTML += `<div style="position:fixed;top:0;left:0;z-index:999999;background:red;color:white;padding:20px;font-size:12px;white-space:pre-wrap;">${e.error.stack}</div>`;
+      });
+      const oldError = console.error;
+      console.error = (...args) => {
+        oldError(...args);
+        reactRoot.innerHTML += `<div style="position:fixed;top:0;left:0;z-index:999999;background:red;color:white;padding:20px;font-size:12px;white-space:pre-wrap;">${args.map(a => a?.stack || String(a)).join(' ')}</div>`;
+      };
+    }
 
-    // @ts-ignore
-    import('../NexusApp.jsx').then((mod) => {
-      const NexusApp = mod.default;
-      createRoot(reactRoot).render(
-        <React.StrictMode>
-          <NexusApp />
-        </React.StrictMode>
-      );
-    });
+    createRoot(reactRoot).render(
+      <React.StrictMode>
+        <NexusApp />
+      </React.StrictMode>
+    );
 
     clearChunkReloadGuard(chunkReloadStorageKey);
   } else {
@@ -338,7 +353,7 @@ if ('__TAURI_INTERNALS__' in window || '__TAURI__' in window) {
   });
 }
 
-if (!('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window) && 'serviceWorker' in navigator) {
+if (import.meta.env.PROD && !('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window) && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js', { scope: '/' })
     .then((registration) => {
       console.log('[PWA] Service worker registered');

@@ -91,7 +91,7 @@ export const OPTIONAL_LIVE_CHANNELS: LiveChannel[] = [
   { id: 'cnn', name: 'CNN', handle: '@CNN', fallbackVideoId: 'w_Ma8oQLmSM' },
   { id: 'fox-news', name: 'Fox News', handle: '@FoxNews', fallbackVideoId: 'QaftgYkG-ek' },
   { id: 'newsmax', name: 'Newsmax', handle: '@NEWSMAX', fallbackVideoId: 'S-lFBzloL2Y', useFallbackOnly: true },
-  { id: 'abc-news', name: 'ABC News', handle: '@ABCNews' },
+  { id: 'abc-news', name: 'ABC News', handle: '@ABCNews', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   { id: 'cbs-news', name: 'CBS News', handle: '@CBSNews', fallbackVideoId: 'R9L8sDK8iEc' },
   { id: 'nbc-news', name: 'NBC News', handle: '@NBCNews', fallbackVideoId: 'yMr0neQhu6c' },
   { id: 'cbc-news', name: 'CBC News', handle: '@CBCNews', fallbackVideoId: 'jxP_h3V-Dv8' },
@@ -107,49 +107,49 @@ export const OPTIONAL_LIVE_CHANNELS: LiveChannel[] = [
   { id: 'trt-haber', name: 'TRT Haber', handle: '@trthaber', fallbackVideoId: '3XHebGJG0bc' },
   { id: 'ntv-turkey', name: 'NTV', handle: '@NTV', fallbackVideoId: 'pqq5c6k70kk' },
   { id: 'cnn-turk', name: 'CNN TURK', handle: '@cnnturk', fallbackVideoId: 'lsY4GFoj_xY' },
-  { id: 'tv-rain', name: 'TV Rain', handle: '@tvrain' },
-  { id: 'rt', name: 'RT', handle: '' },
+  { id: 'tv-rain', name: 'TV Rain', handle: '@tvrain', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'rt', name: 'RT', handle: '', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   { id: 'tvp-info', name: 'TVP Info', handle: '@tvpinfo', fallbackVideoId: '3jKb-uThfrg' },
   { id: 'telewizja-republika', name: 'Telewizja Republika', handle: '@Telewizja_Republika', fallbackVideoId: 'dzntyCTgJMQ' },
   // Latin America & Portuguese
   { id: 'cnn-brasil', name: 'CNN Brasil', handle: '@CNNbrasil', fallbackVideoId: 'qcTn899skkc' },
-  { id: 'jovem-pan', name: 'Jovem Pan News', handle: '@jovempannews' },
-  { id: 'record-news', name: 'Record News', handle: '@RecordNews' },
-  { id: 'band-jornalismo', name: 'Band Jornalismo', handle: '@BandJornalismo' },
+  { id: 'jovem-pan', name: 'Jovem Pan News', handle: '@jovempannews', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'record-news', name: 'Record News', handle: '@RecordNews', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'band-jornalismo', name: 'Band Jornalismo', handle: '@BandJornalismo', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   { id: 'tn-argentina', name: 'TN (Todo Noticias)', handle: '@todonoticias', fallbackVideoId: 'cb12KmMMDJA' },
   { id: 'c5n', name: 'C5N', handle: '@c5n', fallbackVideoId: 'SF06Qy1Ct6Y' },
-  { id: 'milenio', name: 'MILENIO', handle: '@MILENIO' },
-  { id: 'noticias-caracol', name: 'Noticias Caracol', handle: '@NoticiasCaracol' },
-  { id: 'ntn24', name: 'NTN24', handle: '@NTN24' },
-  { id: 't13', name: 'T13', handle: '@Teletrece' },
+  { id: 'milenio', name: 'MILENIO', handle: '@MILENIO', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'noticias-caracol', name: 'Noticias Caracol', handle: '@NoticiasCaracol', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'ntn24', name: 'NTN24', handle: '@NTN24', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 't13', name: 'T13', handle: '@Teletrece', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   // Asia
   { id: 'tbs-news', name: 'TBS NEWS DIG', handle: '@tbsnewsdig', fallbackVideoId: 'aUDm173E8k8' },
-  { id: 'ann-news', name: 'ANN News', handle: '@ANNnewsCH' },
-  { id: 'ntv-news', name: 'NTV News (Japan)', handle: '@ntv_news' },
-  { id: 'cti-news', name: 'CTI News (Taiwan)', handle: '@中天新聞CtiNews' },
-  { id: 'wion', name: 'WION', handle: '@WION' },
-  { id: 'ndtv', name: 'NDTV 24x7', handle: '@NDTV' },
+  { id: 'ann-news', name: 'ANN News', handle: '@ANNnewsCH', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'ntv-news', name: 'NTV News (Japan)', handle: '@ntv_news', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'cti-news', name: 'CTI News (Taiwan)', handle: '@中天新聞CtiNews', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'wion', name: 'WION', handle: '@WION', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'ndtv', name: 'NDTV 24x7', handle: '@NDTV', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   { id: 'cna-asia', name: 'CNA (NewsAsia)', handle: '@channelnewsasia', fallbackVideoId: 'XWq5kBlakcQ' },
   { id: 'nhk-world', name: 'NHK World Japan', handle: '@NHKWORLDJAPAN', fallbackVideoId: 'f0lYfG_vY_U' },
-  { id: 'arirang-news', name: 'Arirang News', handle: '@ArirangCoKrArirangNEWS' },
+  { id: 'arirang-news', name: 'Arirang News', handle: '@ArirangCoKrArirangNEWS', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   { id: 'india-today', name: 'India Today', handle: '@indiatoday', fallbackVideoId: 'sYZtOFzM78M' },
-  { id: 'abp-news', name: 'ABP News', handle: '@ABPNews' },
+  { id: 'abp-news', name: 'ABP News', handle: '@ABPNews', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   // Middle East (defaults first)
   { id: 'alarabiya', name: 'AlArabiya', handle: '@AlArabiya', fallbackVideoId: 'n7eQejkXbnM', useFallbackOnly: true },
   { id: 'aljazeera', name: 'AlJazeera', handle: '@AlJazeeraEnglish', fallbackVideoId: 'gCNeDWCI0vo', useFallbackOnly: true },
   { id: 'al-hadath', name: 'Al Hadath', handle: '@AlHadath', fallbackVideoId: 'xWXpl7azI8k', useFallbackOnly: true },
   { id: 'sky-news-arabia', name: 'Sky News Arabia', handle: '@skynewsarabia', fallbackVideoId: 'U--OjmpjF5o' },
   { id: 'trt-world', name: 'TRT World', handle: '@TRTWorld', fallbackVideoId: 'ABfFhWzWs0s' },
-  { id: 'iran-intl', name: 'Iran International', handle: '@IranIntl' },
-  { id: 'cgtn-arabic', name: 'CGTN Arabic', handle: '@CGTNArabic' },
+  { id: 'iran-intl', name: 'Iran International', handle: '@IranIntl', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'cgtn-arabic', name: 'CGTN Arabic', handle: '@CGTNArabic', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   { id: 'kan-11', name: 'Kan 11', handle: '@KAN11NEWS', fallbackVideoId: 'TCnaIE_SAtM' },
   { id: 'asharq-news', name: 'Asharq News', handle: '@asharqnews', fallbackVideoId: 'f6VpkfV7m4Y', useFallbackOnly: true },
   // Africa
-  { id: 'africanews', name: 'Africanews', handle: '@africanews' },
-  { id: 'channels-tv', name: 'Channels TV', handle: '@ChannelsTelevision' },
+  { id: 'africanews', name: 'Africanews', handle: '@africanews', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'channels-tv', name: 'Channels TV', handle: '@ChannelsTelevision', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   { id: 'ktn-news', name: 'KTN News', handle: '@ktnnews_kenya', fallbackVideoId: 'RmHtsdVb3mo' },
-  { id: 'enca', name: 'eNCA', handle: '@encanews' },
-  { id: 'sabc-news', name: 'SABC News', handle: '@SABCDigitalNews' },
+  { id: 'enca', name: 'eNCA', handle: '@encanews', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'sabc-news', name: 'SABC News', handle: '@SABCDigitalNews', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   { id: 'arise-news', name: 'Arise News', handle: '@AriseNewsChannel', fallbackVideoId: '4uHZdlX-DT4' },
   // Europe (additional)
   { id: 'welt', name: 'WELT', handle: '@WELTVideoTV', fallbackVideoId: 'L-TNmYmaAKQ', geoAvailability: ['DE', 'AT', 'CH'] },
@@ -158,9 +158,9 @@ export const OPTIONAL_LIVE_CHANNELS: LiveChannel[] = [
   { id: 'france24-fr', name: 'France 24 FR', handle: '@France24_fr', fallbackVideoId: 'l8PMl7tUDIE' },
   { id: 'france-info', name: 'France Info', handle: '@franceinfo', fallbackVideoId: 'Z-Nwo-ypKtM' },
   { id: 'bfmtv', name: 'BFMTV', handle: '@BFMTV', fallbackVideoId: 'smB_F6DW7cI' },
-  { id: 'tv5monde-info', name: 'TV5 Monde Info', handle: '@TV5MONDEInfo' },
-  { id: 'nrk1', name: 'NRK1', handle: '@nrk' },
-  { id: 'aljazeera-balkans', name: 'Al Jazeera Balkans', handle: '@AlJazeeraBalkans' },
+  { id: 'tv5monde-info', name: 'TV5 Monde Info', handle: '@TV5MONDEInfo', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'nrk1', name: 'NRK1', handle: '@nrk', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
+  { id: 'aljazeera-balkans', name: 'Al Jazeera Balkans', handle: '@AlJazeeraBalkans', fallbackVideoId: 'w_Ma8oQLmSM', useFallbackOnly: true },
   // Oceania
   { id: 'abc-news-au', name: 'ABC News Australia', handle: '@abcnewsaustralia', fallbackVideoId: 'vOTiJkg1voo' },
 ];
@@ -1171,7 +1171,7 @@ export class LiveNewsPanel extends Panel {
         if (wantUnmute && this.nativeVideoElement === video) {
           video.muted = false;
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 
@@ -1179,7 +1179,7 @@ export class LiveNewsPanel extends Panel {
     if (!this.nativeVideoElement) return;
     this.nativeVideoElement.muted = this.isMuted;
     if (this.isPlaying) {
-      this.nativeVideoElement.play()?.catch(() => {});
+      this.nativeVideoElement.play()?.catch(() => { });
     } else {
       this.nativeVideoElement.pause();
     }
