@@ -22,23 +22,40 @@ export async function getSupplierFinancialHealth(ticker) {
         return getMockFinancialHealth(ticker);
     }
 
-    try {
-        const url = `https://${RAPIDAPI_HOST}/api/v3/ratios/${ticker}`;
-        const res = await fetch(url, { headers: BASE_HEADERS });
-        if (!res.ok) {
-            // Silently fallback on 404 to avoid console spam for missing international tickers like 2317.TW
-            if (res.status !== 404) {
-                console.warn(`[FinancialHealth] FMP API returned ${res.status} for ${ticker}`);
-            }
-            throw new Error(`Financial Modeling Prep error: ${res.status}`);
-        }
-        const data = await res.json();
+    const MAX_RETRIES = 3;
+    let attempt = 0;
 
-        return normalizeFinancialData(ticker, data);
-    } catch (err) {
-        // Fallback to mock data on ANY error
-        return getMockFinancialHealth(ticker);
+    while (attempt <= MAX_RETRIES) {
+        try {
+            const url = `https://${RAPIDAPI_HOST}/api/v3/ratios/${ticker}`;
+            const res = await fetch(url, { headers: BASE_HEADERS });
+
+            if (res.status === 429 && attempt < MAX_RETRIES) {
+                // Exponential backoff: 1s, 2s, 4s, etc.
+                const delayStr = Math.pow(2, attempt) * 1000;
+                console.warn(`[FinancialHealth] 429 Rate Limit hit for ${ticker}. Retrying in ${delayStr}ms (Attempt ${attempt + 1}/${MAX_RETRIES})...`);
+                await new Promise(resolve => setTimeout(resolve, delayStr));
+                attempt++;
+                continue;
+            }
+
+            if (!res.ok) {
+                // Silently fallback on 404 to avoid console spam for missing international tickers like 2317.TW
+                if (res.status !== 404) {
+                    console.warn(`[FinancialHealth] FMP API returned ${res.status} for ${ticker}`);
+                }
+                throw new Error(`Financial Modeling Prep error: ${res.status}`);
+            }
+
+            const data = await res.json();
+            return normalizeFinancialData(ticker, data);
+        } catch (err) {
+            // Only fallback to mock data immediately if we caught an error or exhausted retries
+            return getMockFinancialHealth(ticker);
+        }
     }
+
+    return getMockFinancialHealth(ticker);
 }
 
 /**

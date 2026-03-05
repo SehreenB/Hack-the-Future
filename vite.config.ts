@@ -1114,10 +1114,10 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/cloudflare-radar/, ''),
       },
       // NGA Maritime Safety Information - Navigation Warnings
-      '/api/nga-msi': {
+      '/api/msi': {
         target: 'https://msi.nga.mil',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/nga-msi/, ''),
+        rewrite: (path) => path.replace(/^\/api\/msi/, ''),
       },
       // GDELT GEO 2.0 API - Global event data
       '/api/gdelt': {

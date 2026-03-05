@@ -69,7 +69,7 @@ export async function analyzeDisruption({ signal, falsePositiveRate = 12, onProg
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(falsePositiveRate) {
-  return `You are NEXUS, a Supply Disruption Decision-Support Co-Pilot. You are DETERMINISTIC, AUDIT-READY, and HALLUCINATION-RESISTANT.
+  return `You are OSIRIS, a Supply Disruption Decision-Support Co-Pilot. You are DETERMINISTIC, AUDIT-READY, and HALLUCINATION-RESISTANT.
 
 MANUFACTURER PROFILE (your grounding context):
 ${JSON.stringify(MANUFACTURER_PROFILE, null, 2)}
@@ -210,7 +210,7 @@ Additional context:
 - Region: ${signal.regionHint || "Derive from signal context"}
 - Commodity: ${signal.commodityHint || "Derive from signal context"}
 
-Run the complete NEXUS 11-step workflow:
+Run the complete OSIRIS 11-step workflow:
 SENSE → CLASSIFY → PROBABILITY → RISK SCORING → IMPACT MODELING → SCENARIO SIMULATION → PLAYBOOK → CRITIC PASS → DRAFT ACTIONS → ESCALATION DECISION → VERIFY & LOG
 
 Ground all factual claims in the manufacturer profile provided. Use "Data not available in grounded context." for any data point not derivable from the signal or profile.

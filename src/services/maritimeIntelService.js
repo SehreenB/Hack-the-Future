@@ -10,7 +10,7 @@
  */
 export async function getMaritimeWarnings(corridors = ["Taiwan", "Red Sea", "Pacific"]) {
     try {
-        const url = "https://msi.nga.mil/api/publications/broadcast-warn?output=json&status=A";
+        const url = "/api/msi/publications/broadcast-warn?output=json&status=A";
         const res = await fetch(url);
         if (!res.ok) throw new Error(`MSI NGA error: ${res.status}`);
         const data = await res.json();

@@ -261,7 +261,7 @@ localStorage.removeItem('wm-settings-open');
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 // @ts-ignore
-import NexusApp from './NexusApp.jsx';
+import OsirisApp from './OsirisApp.jsx';
 
 const urlParams = new URL(location.href).searchParams;
 if (urlParams.get('settings') === '1') {
@@ -280,9 +280,9 @@ if (urlParams.get('settings') === '1') {
   );
 } else {
   // Determine route based on pathname
-  const isNexus = window.location.pathname === '/' || window.location.pathname === '/nexus';
+  const isOsiris = window.location.pathname === '/' || window.location.pathname === '/osiris';
 
-  if (isNexus) {
+  if (isOsiris) {
     // Hide WorldMonitor shell
     const appEl = document.getElementById('app');
     const panelEl = document.getElementById('country-deep-dive-panel');
@@ -306,7 +306,7 @@ if (urlParams.get('settings') === '1') {
 
     createRoot(reactRoot).render(
       <React.StrictMode>
-        <NexusApp />
+        <OsirisApp />
       </React.StrictMode>
     );
 

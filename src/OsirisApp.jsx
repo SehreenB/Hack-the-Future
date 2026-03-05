@@ -132,9 +132,9 @@ const PLAYBOOK = [
 ];
 
 const AUDIT_LOG_MOCK = [
-  { id: "NXS-001", ts: "10:42 AM", supplier: "TSMC / Hon Hai", region: "Taiwan", risk: 87, confidence: 91, tier: 4, escalated: true },
-  { id: "NXS-002", ts: "10:26 AM", supplier: "Multiple EU", region: "Suez", risk: 72, confidence: 84, tier: 3, escalated: true },
-  { id: "NXS-003", ts: "09:44 AM", supplier: "BASF Corp", region: "Gulf Coast", risk: 54, confidence: 76, tier: 3, escalated: false },
+  { id: "OSR-001", ts: "10:42 AM", supplier: "TSMC / Hon Hai", region: "Taiwan", risk: 87, confidence: 91, tier: 4, escalated: true },
+  { id: "OSR-002", ts: "10:26 AM", supplier: "Multiple EU", region: "Suez", risk: 72, confidence: 84, tier: 3, escalated: true },
+  { id: "OSR-003", ts: "09:44 AM", supplier: "BASF Corp", region: "Gulf Coast", risk: 54, confidence: 76, tier: 3, escalated: false },
 ];
 
 const PINS_NORTHSTAR = [
@@ -479,8 +479,8 @@ function MonitorPage({ onAnalyze, globalAlerts, currentProfile }) {
     await new Promise(r => setTimeout(r, 600));
     setSimulating(false);
 
-    // Find Red Sea alert (NXS-002)
-    const redSeaAlert = alertsToUse.find(a => a.id === "NXS-002") || alertsToUse[1] || ACTIVE_ALERTS[1];
+    // Find Red Sea alert (OSR-002)
+    const redSeaAlert = alertsToUse.find(a => a.id === "OSR-002") || alertsToUse[1] || ACTIVE_ALERTS[1];
     onAnalyze(redSeaAlert);
   };
 
@@ -731,8 +731,12 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       if (selected.supplier.toLowerCase().includes("bayer")) ticker = "BAYN.DE";
       if (selected.supplier.toLowerCase().includes("basf")) ticker = "BASFY";
 
-      const health = await getSupplierFinancialHealth(ticker);
-      setSupplierHealth(health);
+      try {
+        const health = await getSupplierFinancialHealth(ticker);
+        setSupplierHealth(health);
+      } catch (e) {
+        console.warn(`[AnalysisPage] Failed to grab health: ${e.message}`);
+      }
     }
     fetchHealth();
   }, [selected]);
@@ -1649,7 +1653,7 @@ function SettingsPage({ currentProfile, setCurrentProfile, systemProfiles }) {
 }
 
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
-export default function NexusApp() {
+export default function OsirisApp() {
   const [page, setPage] = useState("monitor");
   const [focusAlert, setFocusAlert] = useState(null);
 
@@ -1738,12 +1742,19 @@ export default function NexusApp() {
     loadData();
 
     // Setup realtime sub just to reload if changes happen
-    const unsubPromise = subscribeToDisruptions(() => {
-      loadData();
+    let activeUnsub = null;
+    let isMounted = true;
+
+    subscribeToDisruptions(() => {
+      if (isMounted) loadData();
+    }).then(unsub => {
+      if (!isMounted && unsub) unsub();
+      else activeUnsub = unsub;
     });
 
     return () => {
-      unsubPromise.then(unsub => unsub && unsub());
+      isMounted = false;
+      if (activeUnsub) activeUnsub();
     }
   }, []);
 
