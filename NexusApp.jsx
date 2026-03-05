@@ -182,7 +182,7 @@ const Icons = {
   Refresh: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" /></svg>,
   DollarSign: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>,
   FileText: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-,
+  ,
   Globe: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
 };
 
@@ -393,6 +393,36 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
   const alertsToUse = globalAlerts && globalAlerts.length > 0 ? globalAlerts : ACTIVE_ALERTS;
   const [analyzing, setAnalyzing] = useState(false);
   const [status, setStatus] = useState("");
+  const [simulating, setSimulating] = useState(false);
+  const [simSteps, setSimSteps] = useState([]);
+
+  const handleSimulate = async () => {
+    setSimulating(true);
+    setSimSteps([]);
+    const steps = [
+      "SENSE: Ingesting GNews + GDELT signals...",
+      "CLASSIFY: Matching supplier registry...",
+      "PROBABILITY: Assessing disruption likelihood...",
+      "RISK SCORING: Computing revenue-at-risk...",
+      "IMPACT: Calculating supply chain blast radius...",
+      "SCENARIOS: Running base/stress/shock...",
+      "PLAYBOOK: Ranking mitigations...",
+      "CRITIC: Validating with constraints...",
+      "DRAFT: Generating communication...",
+      "ESCALATION: Evaluating thresholds...",
+      "LOG: Writing to immutable ledger..."
+    ];
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise(r => setTimeout(r, 600));
+      setSimSteps(prev => [...prev, steps[i]]);
+    }
+    await new Promise(r => setTimeout(r, 600));
+    setSimulating(false);
+
+    // Find Red Sea alert (NXS-002)
+    const redSeaAlert = alertsToUse.find(a => a.id === "NXS-002") || alertsToUse[1] || ACTIVE_ALERTS[1];
+    onAnalyze(redSeaAlert);
+  };
 
   const handleQuickAnalyze = async (alert) => {
     setAnalyzing(true);
@@ -408,6 +438,53 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
   return (
     <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
 
+      {/* Title & Simulate Button */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: C.text, margin: 0 }}>Live Monitor</h1>
+        <button
+          onClick={handleSimulate}
+          disabled={simulating}
+          style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "10px 16px",
+            background: simulating ? "rgba(255,255,255,0.05)" : "rgba(245, 158, 11, 0.15)",
+            border: `1px solid ${simulating ? "rgba(255,255,255,0.1)" : "rgba(245, 158, 11, 0.3)"}`,
+            borderRadius: 8, color: simulating ? C.textLight : C.brand, fontSize: 13,
+            fontWeight: 700, cursor: simulating ? "not-allowed" : "pointer",
+            transition: "all 0.2s"
+          }}>
+          {simulating ? (
+            <>
+              <span style={{ display: "inline-block", animation: "spin 1s linear infinite", fontSize: 14 }}>⟳</span>
+              Agent Running...
+            </>
+          ) : (
+            <>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: C.critical, animation: "pulseAnim 2s infinite" }} />
+              Simulate Live Disruption
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Simulation Banner & Logs */}
+      {simulating && (
+        <div style={{ background: C.criticalLight, border: `1px solid ${C.criticalBorder}`, borderRadius: 12, padding: "20px", marginBottom: 22, animation: "fadeUp 0.3s ease-out" }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: C.critical, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 20 }}>🚨</span>
+            LIVE SIMULATION — Red Sea Rerouting Event Detected
+          </div>
+          <div style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(220, 38, 38, 0.2)", borderRadius: 8, padding: "16px", fontFamily: "'Fira Code', monospace", fontSize: 12, color: C.textMid, display: "flex", flexDirection: "column", gap: 6, maxHeight: "200px", overflowY: "auto" }}>
+            {simSteps.map((step, idx) => (
+              <div key={idx} style={{ display: "flex", gap: 10, animation: "fadeUp 0.3s ease-out" }}>
+                <span style={{ color: C.critical }}>{`[${new Date().toLocaleTimeString()}]`}</span>
+                <span style={{ color: C.text }}>{step}</span>
+              </div>
+            ))}
+            <div style={{ opacity: 0.5, inlineSize: "fit-content", animation: "pulseAnim 1s infinite" }}>_</div>
+          </div>
+        </div>
+      )}
+
       {/* KPI row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
         {[
@@ -416,7 +493,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
           { label: "Critical Suppliers", value: "2", sub: "< 10 days stockout", color: C.critical },
           { label: "Avg Confidence", value: "84%", sub: "Above escalation threshold", color: C.success },
         ].map(k => (
-          <div key={k.label} style={{ background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border}`, boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
+          <div key={k.label} style={{ background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border} `, boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
             <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6, fontWeight: 500 }}>{k.label}</div>
             <div style={{ fontSize: 28, fontWeight: 900, color: k.color, letterSpacing: "-0.03em", lineHeight: 1, fontFamily: "'Fira Code',sans-serif" }}>{k.value}</div>
             <div style={{ fontSize: 11, color: C.textLight, marginTop: 8 }}>{k.sub}</div>
@@ -440,7 +517,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
           {alertsToUse.map(a => {
             const cfg = SEV_CFG[a.severity] || SEV_CFG.medium;
             return (
-              <div key={a.id} style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border}`, overflow: "hidden", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
+              <div key={a.id} style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border} `, overflow: "hidden", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
                 <div style={{ display: "flex", alignItems: "stretch" }}>
                   {/* Left severity bar */}
                   <div style={{ width: 5, background: cfg.color, flexShrink: 0 }} />
@@ -450,10 +527,10 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, letterSpacing: "0.04em" }}>{cfg.label.toUpperCase()}</span>
+                          <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border} `, letterSpacing: "0.04em" }}>{cfg.label.toUpperCase()}</span>
                           <span style={{ fontSize: 11, color: C.textLight }}>{a.id}</span>
                           <span style={{ fontSize: 11, color: C.textLight }}>· {a.detectedAt}</span>
-                          {a.escalate && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#FEF2F2", color: C.critical, border: `1px solid ${C.criticalBorder}` }}>🚨 ESCALATE</span>}
+                          {a.escalate && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#FEF2F2", color: C.critical, border: `1px solid ${C.criticalBorder} ` }}>🚨 ESCALATE</span>}
                         </div>
                         <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 4, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.01em" }}>{a.title}</div>
                         <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10 }}>{a.supplier} · {a.region} · {a.commodity}</div>
@@ -461,7 +538,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
 
                         {/* Collapsible Reasoning Trace snippet */}
                         {a.reasoningTrace && a.reasoningTrace.length > 0 && (
-                          <details style={{ background: "#F8FAFC", padding: "10px 14px", borderRadius: 8, border: `1px dashed ${C.border}`, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5, cursor: "pointer", outline: "none" }}>
+                          <details style={{ background: "#F8FAFC", padding: "10px 14px", borderRadius: 8, border: `1px dashed ${C.border} `, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5, cursor: "pointer", outline: "none" }}>
                             <summary style={{ fontWeight: 700, color: C.text, marginBottom: 4, outline: "none", userSelect: "none" }}>[+] AI Reasoning Trace : Expand Logic Chain</summary>
                             <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
                               {a.reasoningTrace.map((step, idx) => {
@@ -482,7 +559,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
                       <div style={{ marginLeft: 24, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12, flexShrink: 0 }}>
                         <RiskGauge score={a.riskScore} size={88} />
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, textAlign: "right" }}>
-                          {[["Rev at Risk", a.revenueAtRisk, cfg.color], ["Confidence", `${a.confidenceScore}%`, C.text], ["Stockout", `${a.daysToStockout}d`, a.daysToStockout < 10 ? C.critical : C.high], ["CoD Tier", `T${a.costOfDelayTier}`, cfg.color]].map(([l, v, c]) => (
+                          {[["Rev at Risk", a.revenueAtRisk, cfg.color], ["Confidence", `${a.confidenceScore}% `, C.text], ["Stockout", `${a.daysToStockout} d`, a.daysToStockout < 10 ? C.critical : C.high], ["CoD Tier", `T${a.costOfDelayTier} `, cfg.color]].map(([l, v, c]) => (
                             <div key={l}><div style={{ fontSize: 9, color: C.textLight, letterSpacing: "0.04em" }}>{l}</div><div style={{ fontSize: 12, fontWeight: 700, color: c, fontFamily: "'Sora',sans-serif" }}>{v}</div></div>
                           ))}
                         </div>
@@ -490,7 +567,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
                     </div>
 
                     {/* Footer */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.border} ` }}>
                       <div style={{ display: "flex", gap: 20 }}>
                         <span style={{ fontSize: 11, color: C.textMid }}><strong>BOM:</strong> {a.bomImpact}</span>
                         <span style={{ fontSize: 11, color: C.textMid }}><strong>Open POs:</strong> {a.openPOs}</span>
@@ -499,7 +576,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
                         onClick={() => handleQuickAnalyze(a)}
                         disabled={analyzing}
                         style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: a.riskScore >= 75 ? C.critical : C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", opacity: analyzing ? 0.6 : 1 }}>
-                        {analyzing ? `${status}` : "Run Full Analysis →"}
+                        {analyzing ? `${status} ` : "Run Full Analysis →"}
                       </button>
                     </div>
                   </div>
@@ -511,7 +588,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
       </div>
 
       {/* Supplier inventory status */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}` }}>
+      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Inventory Coverage — Critical SKUs</div>
         {[
           { sku: "SKU-4421", name: "Processor Module A", days: 8, max: 30, status: "critical" },
@@ -528,7 +605,7 @@ function MonitorPage({ onAnalyze, globalAlerts }) {
                 <span style={{ fontSize: 12, fontWeight: 700, color: barColor, fontFamily: "'Sora',sans-serif" }}>{s.days}d</span>
               </div>
               <div style={{ height: 6, background: "#F1F5F9", borderRadius: 999 }}>
-                <div style={{ height: "100%", width: `${(s.days / s.max) * 100}%`, background: barColor, borderRadius: 999, transition: "width 0.6s ease" }} />
+                <div style={{ height: "100%", width: `${(s.days / s.max) * 100}% `, background: barColor, borderRadius: 999, transition: "width 0.6s ease" }} />
               </div>
             </div>
           );
@@ -592,7 +669,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           eventType: "supplier_communication",
           disruptionId: selected.id,
           action: "email_approved_and_sent",
-          payload: { to: `procurement@${selected.supplier.toLowerCase().split("/")[0].trim().replace(/[^a-z]/g, "")}.com`, subject: `[URGENT] Supply Continuity Review — ${selected.commodity}` }
+          payload: { to: `procurement @${selected.supplier.toLowerCase().split("/")[0].trim().replace(/[^a-z]/g, "")}.com`, subject: `[URGENT] Supply Continuity Review — ${selected.commodity} ` }
         });
         setEmailSending(false);
       } else if (action === "dismissed") {
@@ -677,10 +754,11 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
 
   // Inject logic traces
   if (supplierHealth && supplierHealth.insolvencyRiskScore > 0) {
-    baseReasoning.splice(4, 0, `04.b FINANCIAL HEALTH: ${supplierHealth.ticker} risk assessed. Insolvency Risk: ${supplierHealth.insolvencyRiskScore}/100. (+${Math.round(supplierHealth.insolvencyRiskScore / 10)} to base risk).`);
+    baseReasoning.splice(4, 0, `04.b FINANCIAL HEALTH: ${supplierHealth.ticker} risk assessed.Insolvency Risk: ${supplierHealth.insolvencyRiskScore} /100. (+${Math.round(supplierHealth.insolvencyRiskScore / 10)
+      } to base risk).`);
   }
   if (matchedCountry) {
-    baseReasoning.splice(4, 0, `04.a GEOPOLITICAL: ${matchedCountry} detected. Baseline risk multiplier applied (*1.${countryBaseline < 10 ? '0' + countryBaseline : countryBaseline} to base score).`);
+    baseReasoning.splice(4, 0, `04.a GEOPOLITICAL: ${matchedCountry} detected.Baseline risk multiplier applied(* 1.${countryBaseline < 10 ? '0' + countryBaseline : countryBaseline} to base score).`);
   }
 
   const mockResult = {
@@ -708,7 +786,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           const isActive = selected.id === a.id;
           return (
             <button key={a.id} onClick={() => { setSelected(a); setEmailStatus("pending"); setErpStatus("pending"); }}
-              style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${isActive ? c.color : C.border}`, background: isActive ? c.bg : C.card, cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans',sans-serif" }}>
+              style={{ flex: 1, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${isActive ? c.color : C.border} `, background: isActive ? c.bg : C.card, cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans',sans-serif" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontSize: 10, fontWeight: 800, color: c.color, letterSpacing: "0.04em" }}>{c.label.toUpperCase()}</span>
                 <span style={{ fontSize: 10, color: C.textLight }}>{a.id}</span>
@@ -721,18 +799,18 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       </div>
 
       {/* Alert header */}
-      <div style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 12, padding: "20px 24px", marginBottom: 18 }}>
+      <div style={{ background: cfg.bg, border: `1px solid ${cfg.border} `, borderRadius: 12, padding: "20px 24px", marginBottom: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 800, color: cfg.color, letterSpacing: "0.06em", padding: "4px 10px", background: cfg.color + "15", borderRadius: 999, border: `1px solid ${cfg.border}` }}>{cfg.label.toUpperCase()} — {selected.id}</span>
-              {selected.escalate && <span style={{ fontSize: 10, fontWeight: 700, color: C.critical, padding: "3px 9px", background: C.criticalLight, borderRadius: 999, border: `1px solid ${C.criticalBorder}` }}>🚨 ESCALATION REQUIRED</span>}
+              <span style={{ fontSize: 10, fontWeight: 800, color: cfg.color, letterSpacing: "0.06em", padding: "4px 10px", background: cfg.color + "15", borderRadius: 999, border: `1px solid ${cfg.border} ` }}>{cfg.label.toUpperCase()} — {selected.id}</span>
+              {selected.escalate && <span style={{ fontSize: 10, fontWeight: 700, color: C.critical, padding: "3px 9px", background: C.criticalLight, borderRadius: 999, border: `1px solid ${C.criticalBorder} ` }}>🚨 ESCALATION REQUIRED</span>}
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, color: C.text, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em", marginBottom: 4 }}>{selected.title}</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <div style={{ fontSize: 13, color: C.textMid, fontWeight: 600 }}>{selected.supplier} · {selected.region} · {selected.commodity}</div>
               {matchedCountry && (
-                <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 6, background: countryBaseline > 30 ? C.criticalLight : (countryBaseline >= 15 ? C.mediumLight : C.successLight), color: countryBaseline > 30 ? C.critical : (countryBaseline >= 15 ? C.medium : C.success), fontSize: 10, fontWeight: 800, border: `1px solid ${countryBaseline > 30 ? C.criticalBorder : (countryBaseline >= 15 ? C.mediumBorder : C.successLight)}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 6, background: countryBaseline > 30 ? C.criticalLight : (countryBaseline >= 15 ? C.mediumLight : C.successLight), color: countryBaseline > 30 ? C.critical : (countryBaseline >= 15 ? C.medium : C.success), fontSize: 10, fontWeight: 800, border: `1px solid ${countryBaseline > 30 ? C.criticalBorder : (countryBaseline >= 15 ? C.mediumBorder : C.successLight)} ` }}>
                   <span>{getCountryFlag(matchedCountry)}</span>
                   <span>{matchedCountry} {countryBaseline}/100</span>
                 </div>
@@ -741,7 +819,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <RiskGauge score={adjustedRiskScore} size={100} />
-            <div style={{ background: selected.escalate ? C.criticalLight : C.successLight, border: `1px solid ${selected.escalate ? C.criticalBorder : C.successLight}`, borderRadius: 10, padding: "12px 18px", textAlign: "center" }}>
+            <div style={{ background: selected.escalate ? C.criticalLight : C.successLight, border: `1px solid ${selected.escalate ? C.criticalBorder : C.successLight} `, borderRadius: 10, padding: "12px 18px", textAlign: "center" }}>
               <div style={{ color: selected.escalate ? C.critical : C.success, display: "flex", justifyContent: "center", marginBottom: 6 }}>
                 {selected.escalate ? <Icons.AlertTriangle /> : <Icons.CheckCircle />}
               </div>
@@ -756,12 +834,12 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 18 }}>
         {[
           ["Revenue at Risk", selected.revenueAtRisk, cfg.color],
-          ["Confidence Score", `${selected.confidenceScore}%`, C.text],
-          ["Days to Stockout", `${selected.daysToStockout}d`, selected.daysToStockout < 10 ? C.critical : C.high],
+          ["Confidence Score", `${selected.confidenceScore}% `, C.text],
+          ["Days to Stockout", `${selected.daysToStockout} d`, selected.daysToStockout < 10 ? C.critical : C.high],
           ["Cost-of-Delay", getTierLabel(selected.costOfDelayTier), cfg.color],
           ["Detected", selected.detectedAt, C.textMid],
         ].map(([l, v, c]) => (
-          <div key={l} style={{ background: C.card, borderRadius: 10, padding: "14px 16px", border: `1px solid ${C.border}` }}>
+          <div key={l} style={{ background: C.card, borderRadius: 10, padding: "14px 16px", border: `1px solid ${C.border} ` }}>
             <div style={{ fontSize: 11, color: C.textLight, marginBottom: 6, fontWeight: 500 }}>{l}</div>
             <div style={{ fontSize: 18, fontWeight: 900, color: c, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em" }}>{v}</div>
           </div>
@@ -770,7 +848,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
 
       {/* Supplier Financial Health */}
       {supplierHealth && (
-        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginBottom: 18, animation: "fadeUp 0.3s ease" }}>
+        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18, animation: "fadeUp 0.3s ease" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Supplier Financial Health (API)</div>
             <div style={{ fontSize: 10, fontWeight: 700, color: "white", background: supplierHealth.insolvencyRiskScore > 35 ? C.critical : C.success, padding: "4px 10px", borderRadius: 6, letterSpacing: "0.05em" }}>
@@ -799,7 +877,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       )}
 
       {/* Scenarios */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginBottom: 18 }}>
+      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Scenario Simulation</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
           {[
@@ -807,7 +885,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
             { label: "Stress Case", ...mockResult.scenarios.stressCase, color: C.high },
             { label: "Shock Case", ...mockResult.scenarios.shockCase, color: C.critical },
           ].map(s => (
-            <div key={s.label} style={{ background: C.bg, borderRadius: 10, padding: "16px", borderTop: `3px solid ${s.color}` }}>
+            <div key={s.label} style={{ background: C.bg, borderRadius: 10, padding: "16px", borderTop: `3px solid ${s.color} ` }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: s.color, marginBottom: 4, letterSpacing: "0.04em" }}>{s.label.toUpperCase()}</div>
               {s.note && <div style={{ fontSize: 10, color: C.textLight, marginBottom: 10 }}>{s.note}</div>}
               {[["Transit Delay", s.delay], ["Additional Cost", s.cost], ["Revenue Impact", s.rev], ["Service Level", s.svc]].map(([k, v]) => (
@@ -822,11 +900,11 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       </div>
 
       {/* Playbook */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginBottom: 18 }}>
+      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Ranked Mitigation Playbook</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {activePlaybook.map((p, i) => (
-            <div key={p.rank || i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border}` }}>
+            <div key={p.rank || i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border} ` }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: (p.rank || i + 1) === 1 ? C.brand : (p.rank || i + 1) === 2 ? C.high : "#94A3B8", color: "white", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>#{p.rank || i + 1}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2 }}>{p.action}</div>
@@ -834,7 +912,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
                 <div style={{ fontSize: 11, color: C.textLight, marginTop: 4, fontStyle: "italic" }}>Trade-off: {p.tradeOff || p.tradeoff}</div>
               </div>
               <div style={{ display: "flex", gap: 18, flexShrink: 0 }}>
-                {[["Cost", p.cost || "-"], ["Time", p.time || "-"], ["Risk ↓", `${p.reduction || 0}%`], ["Feasibility", `${p.feasibility || 0}%`]].map(([k, v]) => (
+                {[["Cost", p.cost || "-"], ["Time", p.time || "-"], ["Risk ↓", `${p.reduction || 0}% `], ["Feasibility", `${p.feasibility || 0}% `]].map(([k, v]) => (
                   <div key={k} style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 10, color: C.textLight }}>{k}</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: k === "Risk ↓" ? C.success : C.text, fontFamily: "'Sora',sans-serif" }}>{v}</div>
@@ -844,7 +922,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
               <div style={{ width: 60, flexShrink: 0 }}>
                 <div style={{ fontSize: 9, color: C.textLight, marginBottom: 4 }}>COMPOSITE</div>
                 <div style={{ height: 4, background: "#E2E8F0", borderRadius: 999, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${p.composite || p.feasibility || 0}%`, background: (p.rank || i + 1) === 1 ? C.brand : C.accent, borderRadius: 999 }} />
+                  <div style={{ height: "100%", width: `${p.composite || p.feasibility || 0}% `, background: (p.rank || i + 1) === 1 ? C.brand : C.accent, borderRadius: 999 }} />
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginTop: 3, fontFamily: "'Sora',sans-serif" }}>{p.composite || p.feasibility || 0}</div>
               </div>
@@ -854,7 +932,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       </div>
 
       {/* Critic pass */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}`, marginBottom: 18 }}>
+      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Fira Code',sans-serif" }}>Critic Pass — Mandatory Second Opinion</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
           {[
@@ -863,7 +941,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
             [{ icon: <Icons.AlertTriangle />, label: "Overlooked Risks" }, mockResult.criticPass.overlooked],
             [{ icon: <Icons.CheckCircle />, label: "Escalation Validity" }, mockResult.criticPass.validity]
           ].map(([{ icon, label }, v]) => (
-            <div key={label} style={{ background: C.bg, borderRadius: 9, padding: "13px 16px", border: `1px solid ${C.border}` }}>
+            <div key={label} style={{ background: C.bg, borderRadius: 9, padding: "13px 16px", border: `1px solid ${C.border} ` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 6 }}>{icon} {label}</div>
               <div style={{ fontSize: 12, color: C.text, lineHeight: 1.6 }}>{v}</div>
             </div>
@@ -873,10 +951,10 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
 
       {/* Draft email + ERP */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
-        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}` }}>
+        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Draft Supplier Email</div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: emailStatus === "pending" ? C.high : (emailStatus === "approved" ? C.success : C.textMid), background: emailStatus === "pending" ? C.highLight : (emailStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${emailStatus === "pending" ? C.highBorder : (emailStatus === "approved" ? C.success : C.border)}` }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: emailStatus === "pending" ? C.high : (emailStatus === "approved" ? C.success : C.textMid), background: emailStatus === "pending" ? C.highLight : (emailStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${emailStatus === "pending" ? C.highBorder : (emailStatus === "approved" ? C.success : C.border)} ` }}>
               {emailStatus === "pending" ? "⏸ AWAITING APPROVAL" : (emailStatus === "approved" ? "✓ EXECUTED" : "DISMISSED")}
             </span>
           </div>
@@ -895,26 +973,26 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
             {emailStatus === "pending" ? (
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => handleAction("email", "dismissed")} disabled={emailSending}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
                   Dismiss
                 </button>
                 <button onClick={() => handleAction("email", "approved")} disabled={emailSending}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand}`, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
                   {emailSending ? "Sending..." : "Approve & Send"}
                 </button>
               </div>
             ) : (
-              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${emailStatus === "approved" ? C.success : C.border}`, background: emailStatus === "approved" ? C.successLight : "#F1F5F9", color: emailStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
+              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${emailStatus === "approved" ? C.success : C.border} `, background: emailStatus === "approved" ? C.successLight : "#F1F5F9", color: emailStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
                 {emailStatus === "approved" ? "✓ Approved & Sent" : "Dismissed"}
               </div>
             )}
           </div>
         </div>
 
-        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}` }}>
+        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>ERP Adjustment Flag</div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: erpStatus === "pending" ? C.textLight : (erpStatus === "approved" ? C.success : C.textMid), background: erpStatus === "pending" ? "#F8FAFC" : (erpStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${erpStatus === "pending" ? C.border : (erpStatus === "approved" ? C.success : C.border)}` }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: erpStatus === "pending" ? C.textLight : (erpStatus === "approved" ? C.success : C.textMid), background: erpStatus === "pending" ? "#F8FAFC" : (erpStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${erpStatus === "pending" ? C.border : (erpStatus === "approved" ? C.success : C.border)} ` }}>
               {erpStatus === "pending" ? "◈ SIMULATED ONLY" : (erpStatus === "approved" ? "✓ EXECUTED" : "DISMISSED")}
             </span>
           </div>
@@ -929,16 +1007,16 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
             {erpStatus === "pending" ? (
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => handleAction("erp", "dismissed")}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
                   Dismiss
                 </button>
                 <button onClick={() => handleAction("erp", "approved")}
-                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand}`, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Fira Sans',sans-serif" }}>
                   Approve Write
                 </button>
               </div>
             ) : (
-              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${erpStatus === "approved" ? C.success : C.border}`, background: erpStatus === "approved" ? C.successLight : "#F1F5F9", color: erpStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'Fira Sans',sans-serif" }}>
+              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${erpStatus === "approved" ? C.success : C.border} `, background: erpStatus === "approved" ? C.successLight : "#F1F5F9", color: erpStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'Fira Sans',sans-serif" }}>
                 {erpStatus === "approved" ? "✓ Write Approved" : "Dismissed"}
               </div>
             )}
@@ -947,7 +1025,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
       </div>
 
       {/* Reasoning trace */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border}` }}>
+      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Fira Code',sans-serif" }}>Full Reasoning Trace — Grounded Citations</div>
         <div style={{ background: C.bg, borderRadius: 9, padding: "14px 16px", maxHeight: 260, overflowY: "auto" }}>
           {mockResult.reasoning.map((step, i) => (
@@ -966,7 +1044,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           {!forecast && !isLoadingForecast && (
             <button
               onClick={handleGenerateForecast}
-              style={{ padding: "6px 14px", borderRadius: 4, border: `1px solid ${C.medium}`, background: "transparent", color: C.medium, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Fira Code', monospace" }}
+              style={{ padding: "6px 14px", borderRadius: 4, border: `1px solid ${C.medium} `, background: "transparent", color: C.medium, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Fira Code', monospace" }}
             >
               DECRYPT SCENARIO
             </button>
@@ -1005,7 +1083,7 @@ function PlaybookPage({ globalAlerts }) {
       // We assign a category and status for UI purposes since the JSONB might not have it
       return alert.playbook.map((p, i) => ({
         ...p,
-        id: `${alert.id}-pb-${i}`,
+        id: `${alert.id} -pb - ${i} `,
         category: p.category || "Supplier Mitigation",
         status: p.status || "Active",
         action: p.action,
@@ -1038,25 +1116,25 @@ function PlaybookPage({ globalAlerts }) {
           ["Avg Risk Reduction", "68%", C.success],
           ["Simulated Outcomes", "1,204", C.text]
         ].map(([l, v, c]) => (
-          <div key={l} style={{ flex: 1, background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border}` }}>
+          <div key={l} style={{ flex: 1, background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border} ` }}>
             <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6 }}>{l}</div>
             <div style={{ fontSize: 28, fontWeight: 900, color: c, fontFamily: "'Fira Code',sans-serif", letterSpacing: "-0.03em" }}>{v}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: C.card, borderRadius: 12, padding: "20px 22px", border: `1px solid ${C.border}` }}>
+      <div style={{ background: C.card, borderRadius: 12, padding: "20px 22px", border: `1px solid ${C.border} ` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Mitigation Library</div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button style={{ padding: "6px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.bg, fontSize: 12, color: C.textMid, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><Icons.FileText /> Filter</button>
+            <button style={{ padding: "6px 12px", border: `1px solid ${C.border} `, borderRadius: 8, background: C.bg, fontSize: 12, color: C.textMid, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><Icons.FileText /> Filter</button>
             <button style={{ padding: "6px 12px", border: "none", borderRadius: 8, background: C.brand, color: "white", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>+ New Strategy</button>
           </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {displayLibrary.map(p => (
-            <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border}` }}>
+            <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border} ` }}>
               <div style={{ flex: 1.5 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{p.action}</span>
@@ -1070,7 +1148,7 @@ function PlaybookPage({ globalAlerts }) {
 
                 {/* Collapsible Reasoning Trace snippet for Playbook */}
                 {p.reasoningTrace && p.reasoningTrace.length > 0 && (
-                  <details style={{ marginTop: 10, background: C.card, padding: "10px 14px", borderRadius: 6, border: `1px solid ${C.border}`, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5, cursor: "pointer", outline: "none" }}>
+                  <details style={{ marginTop: 10, background: C.card, padding: "10px 14px", borderRadius: 6, border: `1px solid ${C.border} `, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5, cursor: "pointer", outline: "none" }}>
                     <summary style={{ fontWeight: 700, color: C.brand, marginBottom: 4, letterSpacing: "0.02em", outline: "none", userSelect: "none" }}>[+] Simulation Reasoning : Expand Steps</summary>
                     <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
                       {p.reasoningTrace.map((step, idx) => {
@@ -1086,7 +1164,7 @@ function PlaybookPage({ globalAlerts }) {
                   </details>
                 )}
               </div>
-              <div style={{ display: "flex", gap: 24, flexShrink: 0, paddingLeft: 16, borderLeft: `1px dashed ${C.border}` }}>
+              <div style={{ display: "flex", gap: 24, flexShrink: 0, paddingLeft: 16, borderLeft: `1px dashed ${C.border} ` }}>
                 {[["Cost", p.cost], ["Time", p.time], ["Score", p.composite]].map(([k, v]) => (
                   <div key={k} style={{ textAlign: "center", minWidth: 40 }}>
                     <div style={{ fontSize: 10, color: C.textLight, marginBottom: 4 }}>{k}</div>
@@ -1124,7 +1202,7 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           {["All Suppliers", "Critical Risk", "Tier 1 Only"].map((f, i) => (
-            <button key={f} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${i === 1 ? C.brand : C.border}`, background: i === 1 ? C.brandLight : C.card, color: i === 1 ? C.brand : C.textMid, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{f}</button>
+            <button key={f} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${i === 1 ? C.brand : C.border} `, background: i === 1 ? C.brandLight : C.card, color: i === 1 ? C.brand : C.textMid, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{f}</button>
           ))}
         </div>
       </div>
@@ -1137,7 +1215,7 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {[["Critical", C.critical], ["High", C.high], ["Medium", C.medium], ["Low", C.success]].map(([l, c]) => (
               <div key={l} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#E2E8F0", fontFamily: "'Fira Code', monospace" }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: c, boxShadow: `0 0 6px ${c}88` }} /> {l} Risk
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: c, boxShadow: `0 0 6px ${c} 88` }} /> {l} Risk
               </div>
             ))}
           </div>
@@ -1177,10 +1255,10 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
 
       {/* Supplier List Below */}
       <div style={{ marginTop: 20 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", background: C.card, borderRadius: 12, overflow: "hidden", border: `1px solid ${C.border}` }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", background: C.card, borderRadius: 12, overflow: "hidden", border: `1px solid ${C.border} ` }}>
           <thead style={{ background: C.bg }}>
             <tr>{["Supplier", "Commodity", "Risk Score", "Status", "Coordinates"].map(h => (
-              <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: C.textLight, textAlign: "left", letterSpacing: "0.04em", borderBottom: `1px solid ${C.border}` }}>{h}</th>
+              <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: C.textLight, textAlign: "left", letterSpacing: "0.04em", borderBottom: `1px solid ${C.border} ` }}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
@@ -1210,19 +1288,19 @@ function AuditPage({ globalAuditLogs }) {
     <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
       <div style={{ display: "flex", gap: 14, marginBottom: 22 }}>
         {[["Analyses Run", logsToUse.length.toString(), C.brand], ["Escalations", logsToUse.filter(l => l.disruptions?.escalated || l.escalated).length.toString(), C.critical], ["HITL Actions", logsToUse.filter(l => l.action).length.toString(), C.success], ["FP Rate", "12%", C.success]].map(([l, v, c]) => (
-          <div key={l} style={{ flex: 1, background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border}` }}>
+          <div key={l} style={{ flex: 1, background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border} ` }}>
             <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6 }}>{l}</div>
             <div style={{ fontSize: 28, fontWeight: 900, color: c, fontFamily: "'Fira Code',sans-serif", letterSpacing: "-0.03em" }}>{v}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: C.card, borderRadius: 12, padding: "20px 22px", border: `1px solid ${C.border}` }}>
+      <div style={{ background: C.card, borderRadius: 12, padding: "20px 22px", border: `1px solid ${C.border} ` }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 16, fontFamily: "'Sora',sans-serif" }}>Immutable Audit Trail</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>{["ID", "Time", "Action", "Supplier", "Region", "Risk", "Confidence", "Tier", "Escalated"].map(h => (
-              <th key={h} style={{ padding: "9px 12px", fontSize: 10, fontWeight: 700, color: C.textLight, textAlign: "left", letterSpacing: "0.05em", borderBottom: `1px solid ${C.border}` }}>{h}</th>
+              <th key={h} style={{ padding: "9px 12px", fontSize: 10, fontWeight: 700, color: C.textLight, textAlign: "left", letterSpacing: "0.05em", borderBottom: `1px solid ${C.border} ` }}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
@@ -1283,17 +1361,17 @@ function SettingsPage({ currentProfile, setCurrentProfile }) {
 
   return (
     <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 800 }}>
-      <div style={{ background: C.card, borderRadius: 12, padding: "24px", border: `1px solid ${C.border}` }}>
+      <div style={{ background: C.card, borderRadius: 12, padding: "24px", border: `1px solid ${C.border} ` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Manufacturer Context Profile</div>
             <div style={{ fontSize: 12, color: C.textMid, marginTop: 4 }}>This JSON context grounds the AI risk engine's logic (Hyper-Personalization).</div>
           </div>
           {!editing ? (
-            <button onClick={() => setEditing(true)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Edit JSON</button>
+            <button onClick={() => setEditing(true)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.text, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Edit JSON</button>
           ) : (
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { setEditing(false); setDraft(JSON.stringify(currentProfile, null, 2)); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+              <button onClick={() => { setEditing(false); setDraft(JSON.stringify(currentProfile, null, 2)); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
               <button onClick={handleSave} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Save Profile</button>
             </div>
           )}
@@ -1303,10 +1381,10 @@ function SettingsPage({ currentProfile, setCurrentProfile }) {
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            style={{ width: "100%", height: 350, padding: "16px", borderRadius: 8, border: `1px solid ${C.brandMid}`, background: C.bg, fontFamily: "monospace", fontSize: 12, color: C.text, resize: "vertical", outline: "none" }}
+            style={{ width: "100%", height: 350, padding: "16px", borderRadius: 8, border: `1px solid ${C.brandMid} `, background: C.bg, fontFamily: "monospace", fontSize: 12, color: C.text, resize: "vertical", outline: "none" }}
           />
         ) : (
-          <div style={{ width: "100%", height: 350, overflowY: "auto", padding: "16px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.bg, fontFamily: "monospace", fontSize: 12, color: C.text, whiteSpace: "pre-wrap" }}>
+          <div style={{ width: "100%", height: 350, overflowY: "auto", padding: "16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.bg, fontFamily: "monospace", fontSize: 12, color: C.text, whiteSpace: "pre-wrap" }}>
             {JSON.stringify(currentProfile, null, 2)}
           </div>
         )}
@@ -1388,7 +1466,7 @@ export default function NexusApp() {
   const handleAnalyze = (alert) => { setFocusAlert(alert); setPage("analysis"); };
 
   const PAGE_META = {
-    monitor: { title: "Live Disruption Monitor", subtitle: `${MANUFACTURER.name} · ${new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}` },
+    monitor: { title: "Live Disruption Monitor", subtitle: `${MANUFACTURER.name} · ${new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ` },
     analysis: { title: "Risk Analysis & Playbook", subtitle: "Full 11-step OSIRIS workflow output" },
     playbook: { title: "Playbook Library", subtitle: "Historical mitigations and outcomes" },
     suppliers: { title: "Supplier Risk Map", subtitle: "Global supplier exposure overview" },
@@ -1401,16 +1479,18 @@ export default function NexusApp() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #FAF5FF; font-family: 'Fira Sans',system-ui,sans-serif; }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes pingAnim { 0% { transform:scale(1); opacity:.8; } 75%,100% { transform:scale(2.4); opacity:0; } }
-        @keyframes pulseAnim { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        button { font-family: 'Fira Sans',system-ui,sans-serif; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-thumb { background: #E9D5FF; border-radius: 99px; }
-      `}</style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+        * { box- sizing: border - box; margin: 0; padding: 0;
+}
+        body { background: #FAF5FF; font - family: 'Fira Sans', system - ui, sans - serif; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pingAnim { 0 % { transform: scale(1); opacity: .8; } 75 %, 100 % { transform: scale(2.4); opacity: 0; } }
+@keyframes pulseAnim { 0 %, 100 % { opacity: 1; } 50 % { opacity: 0.5; } }
+@keyframes spin { 100 % { transform: rotate(360deg); } }
+        button { font - family: 'Fira Sans', system - ui, sans - serif; }
+        :: -webkit - scrollbar { width: 5px; height: 5px; }
+        :: -webkit - scrollbar - thumb { background: #E9D5FF; border - radius: 99px; }
+`}</style>
 
       <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         <Sidebar page={page} setPage={setPage} />
