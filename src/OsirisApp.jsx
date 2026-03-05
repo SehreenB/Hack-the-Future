@@ -9,30 +9,33 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 // ─── DESIGN SYSTEM ────────────────────────────────────────────────────────────
 const C = {
-  brand: "#f59e0b",
-  brandLight: "rgba(245, 158, 11, 0.1)",
-  brandMid: "#d97706",
-  accent: "#b45309",
-  critical: "#DC2626",
-  criticalLight: "rgba(220, 38, 38, 0.1)",
-  criticalBorder: "#DC2626",
-  high: "#F97316",
-  highLight: "rgba(249, 115, 22, 0.1)",
-  highBorder: "#F97316",
-  medium: "#F59E0B",
-  mediumLight: "rgba(245, 158, 11, 0.1)",
-  mediumBorder: "#F59E0B",
-  success: "#10B981",
-  successLight: "rgba(16, 185, 129, 0.1)",
-  text: "#f4f4f5",
-  textMid: "#d4d4d8",
-  textLight: "#a1a1aa",
-  border: "rgba(255,255,255,0.1)",
-  bg: "#0a0a0a",
-  card: "rgba(255, 255, 255, 0.05)",
-  sidebar: "#0a0a0a",
-  sidebarHover: "rgba(255,255,255,0.05)",
-  sidebarActive: "rgba(245, 158, 11, 0.1)",
+  // ── Brand palette ──────────────────────────────────────────────
+  brand: "#FEC502",           // School Bus Yellow
+  brandLight: "rgba(254,197,2,0.12)",
+  brandMid: "#d4a500",
+  accent: "#30BCED",           // Bright Sky
+  accentLight: "rgba(48,188,237,0.12)",
+  critical: "#D36135",         // Spicy Paprika
+  criticalLight: "rgba(211,97,53,0.10)",
+  criticalBorder: "#D36135",
+  high: "#A63C06",             // Rust Brown
+  highLight: "rgba(166,60,6,0.10)",
+  highBorder: "#A63C06",
+  medium: "#FEC502",
+  mediumLight: "rgba(254,197,2,0.12)",
+  mediumBorder: "#FEC502",
+  success: "#30BCED",
+  successLight: "rgba(48,188,237,0.10)",
+  // ── White UI ──────────────────────────────────────────────────
+  text: "#0D1C2B",
+  textMid: "#3A5068",
+  textLight: "#4A6278",
+  border: "rgba(0,0,0,0.09)",
+  bg: "#FFFFFF",
+  card: "#F6F8FA",
+  sidebar: "#12263A",
+  sidebarHover: "rgba(254,197,2,0.08)",
+  sidebarActive: "rgba(254,197,2,0.15)",
 };
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
@@ -261,54 +264,54 @@ function AlertWidget({ onViewDashboard, globalAlerts }) {
   const critCount = alertsToUse.filter(a => a.severity === "critical").length;
 
   return (
-    <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", fontFamily: "'DM Sans',system-ui,sans-serif" }}>
+    <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", fontFamily: "'Space Grotesk',system-ui,sans-serif" }}>
 
       {/* ── COLLAPSED PILL ── */}
       {!expanded && (
         <button onClick={() => { setExpanded(true); setPulse(false); }}
-          style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 20px", borderRadius: 999, background: C.card, border: `1.5px solid ${cfg.border}`, cursor: "pointer", boxShadow: "0 4px 24px rgba(15,23,42,0.12)", animation: "fadeUp 0.3s ease" }}>
+          style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 20px", borderRadius: 8, background: "#0D1C2B", border: `1.5px solid ${cfg.color}`, cursor: "pointer", boxShadow: `0 4px 24px ${cfg.color}30`, animation: "fadeUp 0.3s ease" }}>
           <span style={{ width: 10, height: 10, borderRadius: "50%", background: cfg.color, flexShrink: 0, position: "relative", display: "inline-block" }}>
             {pulse && <span style={{ position: "absolute", inset: -4, borderRadius: "50%", background: cfg.color + "40", animation: "pingAnim 1.6s ease-out infinite" }} />}
           </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{critCount} Critical Alert{critCount !== 1 ? "s" : ""} Detected</span>
-          <span style={{ width: 22, height: 22, borderRadius: "50%", background: cfg.color, color: "white", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{alertsToUse.length}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF", fontFamily: "'Space Grotesk',sans-serif" }}>{critCount} Critical Alert{critCount !== 1 ? "s" : ""} Detected</span>
+          <span style={{ width: 22, height: 22, borderRadius: 4, background: cfg.color, color: "white", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{alertsToUse.length}</span>
         </button>
       )}
 
       {/* ── EXPANDED PANEL ── */}
       {expanded && (
-        <div style={{ width: 380, background: C.card, borderRadius: 16, boxShadow: "0 12px 48px rgba(15,23,42,0.16)", border: "1px solid #E2E8F0", overflow: "hidden", animation: "fadeUp 0.22s ease" }}>
+        <div style={{ width: 390, background: "#0D1C2B", borderRadius: 12, boxShadow: "0 16px 56px rgba(0,0,0,0.5)", border: `1px solid rgba(254,197,2,0.15)`, overflow: "hidden", animation: "fadeUp 0.22s ease" }}>
 
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid #F1F5F9", background: C.bg }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: `1px solid rgba(254,197,2,0.1)` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 28, height: 28, borderRadius: 7, background: C.brand, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#12263A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.01em" }}>OSIRIS</div>
-                <div style={{ fontSize: 10, color: C.textLight, marginTop: -1 }}>Supply Disruption Co-Pilot</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: C.brand, fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em" }}>OSIRIS</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", marginTop: 1, letterSpacing: "0.05em" }}>SUPPLY DISRUPTION CO-PILOT</div>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 999, background: cfg.color + "15", color: cfg.color }}>{alertsToUse.length} Active</span>
-              <button onClick={() => setExpanded(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textLight, fontSize: 15, lineHeight: 1, padding: 3 }}>✕</button>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 4, background: cfg.color + "20", color: cfg.color, fontFamily: "'Space Mono',monospace" }}>{alertsToUse.length} ACTIVE</span>
+              <button onClick={() => setExpanded(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 15, lineHeight: 1, padding: 3 }}>✕</button>
             </div>
           </div>
 
           {/* Alert list */}
-          <div style={{ borderBottom: "1px solid #F1F5F9", maxHeight: 160, overflowY: "auto" }}>
+          <div style={{ borderBottom: `1px solid rgba(254,197,2,0.08)`, maxHeight: 160, overflowY: "auto" }}>
             {alertsToUse.map(a => {
               const c = SEV_CFG[a.severity] || SEV_CFG.medium;
               const isActive = active.id === a.id;
               return (
                 <button key={a.id} onClick={() => setActive(a)}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", border: "none", cursor: "pointer", background: isActive ? c.bg : C.card, borderLeft: `3px solid ${isActive ? c.color : "transparent"}`, textAlign: "left", fontFamily: "'DM Sans',sans-serif" }}>
-                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: c.color, flexShrink: 0 }} />
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", border: "none", cursor: "pointer", background: isActive ? c.bg : "transparent", borderLeft: `3px solid ${isActive ? c.color : "transparent"}`, textAlign: "left", fontFamily: "'Space Grotesk',sans-serif" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: 2, background: c.color, flexShrink: 0 }} />
                   <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: C.text }}>{a.title}</span>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: c.color }}>{c.label}</span>
-                    <span style={{ fontSize: 10, color: C.textLight }}>{a.detectedAt}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: c.color, fontFamily: "'Space Mono',monospace" }}>{c.label.toUpperCase()}</span>
+                    <span style={{ fontSize: 9, color: C.textLight }}>{a.detectedAt}</span>
                   </div>
                 </button>
               );
@@ -316,27 +319,27 @@ function AlertWidget({ onViewDashboard, globalAlerts }) {
           </div>
 
           {/* Active detail */}
-          <div style={{ margin: "12px", borderRadius: 10, padding: "13px 15px", background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+          <div style={{ margin: "12px", borderRadius: 8, padding: "14px 15px", background: cfg.bg, border: `1px solid ${cfg.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 3 }}>{active.title}</div>
                 <div style={{ fontSize: 11, color: C.textMid }}>{active.supplier} · {active.region}</div>
               </div>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: cfg.color, color: "white", fontSize: 16, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 10, fontFamily: "'Sora',sans-serif" }}>{active.riskScore}</div>
+              <div style={{ width: 44, height: 44, borderRadius: 8, background: cfg.color, color: "white", fontSize: 16, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 10, fontFamily: "'Space Mono',monospace" }}>{active.riskScore}</div>
             </div>
             <p style={{ fontSize: 12, color: C.textMid, lineHeight: 1.6, margin: "8px 0 12px" }}>{active.summary.slice(0, 160)}...</p>
             <div style={{ display: "flex", gap: 18 }}>
               {[["Revenue at Risk", active.revenueAtRisk, cfg.color], ["Confidence", `${active.confidenceScore}%`, C.text], ["Days to Stockout", `${active.daysToStockout}d`, active.daysToStockout < 10 ? C.critical : C.high]].map(([l, v, c]) => (
-                <div key={l}><div style={{ fontSize: 10, color: C.textLight, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{l}</div><div style={{ fontSize: 13, fontWeight: 700, color: c, fontFamily: "'Sora',sans-serif" }}>{v}</div></div>
+                <div key={l}><div style={{ fontSize: 9, color: C.textLight, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "'Space Mono',monospace" }}>{l}</div><div style={{ fontSize: 13, fontWeight: 700, color: c, fontFamily: "'Space Mono',monospace" }}>{v}</div></div>
               ))}
             </div>
           </div>
 
           {/* Footer */}
-          <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderTop: "1px solid #F1F5F9" }}>
-            <button onClick={() => setDismissed(true)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1px solid #E2E8F0", background: C.card, color: C.textMid, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Dismiss</button>
+          <div style={{ display: "flex", gap: 8, padding: "12px 14px", borderTop: `1px solid rgba(254,197,2,0.08)` }}>
+            <button onClick={() => setDismissed(true)} style={{ flex: 1, padding: "9px", borderRadius: 6, border: `1px solid rgba(255,255,255,0.1)`, background: "transparent", color: C.textMid, fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif" }}>Dismiss</button>
             <button onClick={() => { onViewDashboard(active); setExpanded(false); }}
-              style={{ flex: 2, padding: "9px 14px", borderRadius: 8, border: "none", background: cfg.color, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+              style={{ flex: 2, padding: "9px 14px", borderRadius: 6, border: "none", background: cfg.color, color: cfg.color === C.brand ? "#12263A" : "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif" }}>
               View Full Analysis →
             </button>
           </div>
@@ -346,78 +349,104 @@ function AlertWidget({ onViewDashboard, globalAlerts }) {
   );
 }
 
+// ─── TICKER TAPE ──────────────────────────────────────────────────────────────
+function TickerTape({ alerts }) {
+  const items = (alerts && alerts.length > 0 ? alerts : [{ id: 'NXS-001', title: 'Taiwan Strait Corridor Closure', commodity: 'Semiconductors' }, { id: 'NXS-002', title: 'Red Sea Rerouting — Transit +14 Days', commodity: 'Automotive Parts' }, { id: 'NXS-003', title: 'BASF Freeport Plant Explosion', commodity: 'Specialty Polymers' }])
+    .map(a => `${a.id} ── ${a.title} ── ${a.commodity}`);
+  const doubled = [...items, ...items, ...items, ...items];
+  return (
+    <div style={{ height: 34, background: C.brand, overflow: 'hidden', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ flexShrink: 0, padding: '0 20px', fontSize: 10, fontWeight: 900, color: '#12263A', fontFamily: "'Space Mono',monospace", letterSpacing: '0.12em', borderRight: '2px solid rgba(18,38,58,0.2)', height: '100%', display: 'flex', alignItems: 'center' }}>LIVE FEED</div>
+      <div style={{ overflow: 'hidden', flex: 1 }}>
+        <div style={{ display: 'flex', gap: 80, animation: 'ticker 40s linear infinite', width: 'max-content' }}>
+          {doubled.map((item, i) => (
+            <span key={i} style={{ color: '#12263A', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '0.02em' }}>
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
   const nav = [
-    { id: "monitor", icon: "⬡", label: "Live Monitor" },
-    { id: "analysis", icon: "◎", label: "Risk Analysis" },
-    { id: "playbook", icon: "◈", label: "Playbook" },
-    { id: "suppliers", icon: "◻", label: "Supplier Map" },
-    { id: "audit", icon: "∿", label: "Audit Log" },
-    { id: "settings", icon: "⚙", label: "Settings & Context" },
+    { id: "monitor", abbr: "MON", label: "Live Monitor" },
+    { id: "analysis", abbr: "RISK", label: "Risk Analysis" },
+    { id: "playbook", abbr: "PLAY", label: "Playbook" },
+    { id: "suppliers", abbr: "MAP", label: "Supplier Map" },
+    { id: "audit", abbr: "LOG", label: "Audit Log" },
+    { id: "settings", abbr: "SET", label: "Settings" },
   ];
 
   return (
-    <aside style={{ width: 220, minWidth: 220, background: C.sidebar, display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0, fontFamily: "'Fira Sans',system-ui,sans-serif" }}>
+    <aside style={{ width: 228, minWidth: 228, background: C.sidebar, display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0, fontFamily: "'Space Grotesk',system-ui,sans-serif", borderRight: "1px solid rgba(254,197,2,0.1)" }}>
       {/* Brand */}
-      <div style={{ padding: "20px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ padding: "16px 20px 14px", borderBottom: "1px solid rgba(254,197,2,0.15)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <img src="/osiris-logo.png" alt="OSIRIS Icon" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+          {/* Eye of Osiris logo — mix-blend-mode:screen removes black bg */}
+          <div style={{ width: 48, height: 48, flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <img
+              src="/osiris-eye-logo.jpg"
+              alt="OSIRIS"
+              style={{ width: 52, height: 52, objectFit: "cover", mixBlendMode: "screen", filter: "brightness(1.05) saturate(1.1)" }}
+            />
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: "white", letterSpacing: "0.06em", fontFamily: "'Fira Code',sans-serif" }}>OSIRIS</div>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em" }}>SUPPLY CO-PILOT</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: C.brand, letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace" }}>OSIRIS</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em", marginTop: 1, fontFamily: "'Space Mono',monospace" }}>SUPPLY CO-PILOT</div>
           </div>
         </div>
       </div>
 
       {/* Profile Switcher */}
-      <div style={{ padding: "16px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginBottom: 2, paddingLeft: 4 }}>ACTIVE PROFILE</div>
+      <div style={{ padding: "14px 12px", borderBottom: "1px solid rgba(254,197,2,0.08)", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.12em", marginBottom: 6, paddingLeft: 8, fontFamily: "'Space Mono',monospace" }}>ACTIVE PROFILE</div>
         {(page === "settings" ? [] : (window.systemProfiles || PROFILES)).map(p => {
           const isActive = currentProfile.name === p.name;
           return (
             <button key={p.name} onClick={() => setCurrentProfile(p)}
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "none", background: isActive ? "rgba(255,255,255,0.06)" : "transparent", cursor: "pointer", textAlign: "left", transition: "all 0.15s", borderLeft: isActive ? `3px solid ${C.brand}` : "3px solid transparent" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.5)" }}>{p.name}</div>
-              <div style={{ fontSize: 10, color: isActive ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)", marginTop: 2 }}>{p.industry}</div>
+              style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: "none", background: isActive ? C.brandLight : "transparent", cursor: "pointer", textAlign: "left", transition: "all 0.15s", borderLeft: isActive ? `3px solid ${C.brand}` : "3px solid transparent" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? C.brand : "rgba(255,255,255,0.45)", letterSpacing: "0.01em" }}>{p.name}</div>
+              <div style={{ fontSize: 9, color: isActive ? "rgba(254,197,2,0.55)" : "rgba(255,255,255,0.25)", marginTop: 2 }}>{p.industry}</div>
             </button>
           )
         })}
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "12px 10px" }}>
+      <nav style={{ flex: 1, padding: "8px 0" }}>
         {nav.map(item => (
           <button key={item.id} onClick={() => setPage(item.id)}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: "none", background: page === item.id ? C.sidebarActive : "transparent", color: page === item.id ? "white" : "rgba(255,255,255,0.55)", fontSize: 13, fontWeight: page === item.id ? 600 : 400, cursor: "pointer", textAlign: "left", marginBottom: 2, fontFamily: "'DM Sans',sans-serif", transition: "all 0.12s" }}>
-            <span style={{ fontSize: 14, width: 18, textAlign: "center", opacity: page === item.id ? 1 : 0.7 }}>{item.icon}</span>
-            {item.label}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: 0, padding: "0", border: "none", background: page === item.id ? C.sidebarActive : "transparent", cursor: "pointer", textAlign: "left", marginBottom: 1, fontFamily: "'Space Grotesk',sans-serif", transition: "all 0.1s", borderLeft: page === item.id ? `3px solid ${C.brand}` : "3px solid transparent" }}>
+            <div style={{ width: 44, padding: "11px 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: page === item.id ? C.brand : "rgba(255,255,255,0.3)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em", flexShrink: 0 }}>{item.abbr}</div>
+            <div style={{ flex: 1, fontSize: 12, fontWeight: page === item.id ? 700 : 400, color: page === item.id ? C.brand : "rgba(255,255,255,0.5)", paddingRight: 12 }}>{item.label}</div>
             {item.id === "monitor" && (
-              <span style={{ marginLeft: "auto", width: 18, height: 18, borderRadius: "50%", background: C.critical, color: "white", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>3</span>
+              <span style={{ marginRight: 10, width: 16, height: 16, background: C.critical, color: "white", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>3</span>
             )}
           </button>
         ))}
       </nav>
 
       {/* WorldMonitor Link */}
-      <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.07)", margin: "0 8px" }}>
+      <div style={{ padding: "12px", margin: "0 8px" }}>
         <button onClick={() => window.location.href = '/world-monitor'}
-          style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans',sans-serif", transition: "all 0.12s" }}
-          onMouseOver={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)" }}
-          onMouseOut={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)" }}>
-          <span style={{ fontSize: 16 }}>🌍</span>
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 7, border: `1px solid rgba(48,188,237,0.2)`, background: `rgba(48,188,237,0.07)`, color: C.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", textAlign: "left", fontFamily: "'Space Grotesk',sans-serif", transition: "all 0.15s" }}
+          onMouseOver={(e) => { e.currentTarget.style.background = `rgba(48,188,237,0.14)`; }}
+          onMouseOut={(e) => { e.currentTarget.style.background = `rgba(48,188,237,0.07)`; }}>
+          <span style={{ fontSize: 11, fontFamily: "'Space Mono',monospace" }}>WORLD</span>
           View WorldMonitor
         </button>
       </div>
 
       {/* Governance badge */}
-      <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.07)", margin: "0 8px 12px" }}>
-        <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "10px 12px", border: "1px solid rgba(255,255,255,0.08)" }}>
-          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: "0.1em", marginBottom: 4 }}>GOVERNANCE STATUS</div>
-          <div style={{ fontSize: 11, color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981" }} />
+      <div style={{ padding: "10px 12px", margin: "0 8px 14px", borderTop: "1px solid rgba(254,197,2,0.08)", paddingTop: 12 }}>
+        <div style={{ background: "rgba(48,188,237,0.08)", borderRadius: 6, padding: "9px 12px", border: `1px solid rgba(48,188,237,0.15)` }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", marginBottom: 4, fontFamily: "'Space Mono',monospace" }}>GOVERNANCE STATUS</div>
+          <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent }} />
             HITL Active — No Auto-Exec
           </div>
         </div>
@@ -429,21 +458,24 @@ function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
 function Topbar({ title, subtitle, flash }) {
   return (
-    <header style={{ height: 58, background: C.card, borderBottom: `1px solid ${flash ? C.brand : C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 50, fontFamily: "'Fira Sans',sans-serif", transition: "border-color 0.3s ease" }}>
-      <div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: "-0.01em", fontFamily: "'Fira Code',sans-serif" }}>{title}</div>
-        {subtitle && <div style={{ fontSize: 11, color: C.textLight, marginTop: 1 }}>{subtitle}</div>}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textLight, padding: "6px 12px", border: `1px solid ${C.border}`, borderRadius: 8, background: C.bg }}>
-          <Icons.Lock /> Assist · Recommend · Simulate
+    <header style={{ height: 60, background: "rgba(13,28,43,0.95)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${flash ? C.brand : "rgba(254,197,2,0.1)"}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 50, fontFamily: "'Space Grotesk',sans-serif", transition: "border-color 0.3s ease" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 3, height: 32, background: C.brand, borderRadius: 99 }} />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#FFFFFF", letterSpacing: "-0.01em", fontFamily: "'Space Grotesk',sans-serif" }}>{title}</div>
+          {subtitle && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 1, letterSpacing: "0.01em" }}>{subtitle}</div>}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", border: `1px solid ${C.border}`, borderRadius: 8, cursor: "pointer" }}>
-          <div style={{ width: 26, height: 26, borderRadius: "50%", background: "none", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${C.border}`, color: C.textLight }}>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.6)", padding: "6px 12px", border: `1px solid rgba(48,188,237,0.3)`, background: `rgba(48,188,237,0.08)`, fontFamily: "'Space Mono',monospace", letterSpacing: "0.02em" }}>
+          <Icons.Lock /> ASSIST · RECOMMEND · SIMULATE
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", border: `1px solid rgba(254,197,2,0.15)`, borderRadius: 6, cursor: "pointer", background: C.brandLight }}>
+          <div style={{ width: 26, height: 26, borderRadius: "50%", background: "none", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${C.brand}`, color: C.brand }}>
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Sign In</span>
-          <span style={{ fontSize: 10, color: C.textLight }}>▾</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: C.brand }}>Sign In</span>
+          <span style={{ fontSize: 10, color: C.brand, opacity: 0.6 }}>▾</span>
         </div>
       </div>
     </header>
@@ -532,7 +564,7 @@ function MonitorPage({ onAnalyze, globalAlerts, currentProfile }) {
       {simulating && (
         <div style={{ background: C.criticalLight, border: `1px solid ${C.criticalBorder}`, borderRadius: 12, padding: "20px", marginBottom: 22, animation: "fadeUp 0.3s ease-out" }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: C.critical, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 20 }}>🚨</span>
+            <span style={{ fontSize: 11, fontWeight: 900, fontFamily: "'Space Mono',monospace", color: C.critical }}>SIM</span>
             LIVE SIMULATION — Red Sea Rerouting Event Detected
           </div>
           <div style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(220, 38, 38, 0.2)", borderRadius: 8, padding: "16px", fontFamily: "'Fira Code', monospace", fontSize: 12, color: C.textMid, display: "flex", flexDirection: "column", gap: 6, maxHeight: "200px", overflowY: "auto" }}>
@@ -547,103 +579,93 @@ function MonitorPage({ onAnalyze, globalAlerts, currentProfile }) {
         </div>
       )}
 
-      {/* KPI row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
+      {/* KPI row — borderless editorial stats */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}`, marginBottom: 0 }}>
         {[
-          { label: "Active Disruptions", value: String(alertsToUse.length), sub: "↑ from last 24h", color: C.critical },
+          { label: "ACTIVE DISRUPTIONS", value: String(alertsToUse.length), sub: "↑ from last 24h", color: C.critical },
           {
-            label: "Revenue at Risk",
+            label: "REVENUE AT RISK",
             value: `$${(parseFloat(String(currentProfile.dailyRevenue).replace(/[^0-9.]/g, '')) * 17 / 1000).toFixed(1)}M`,
-            sub: "Across all active alerts",
+            sub: "Across all alerts",
             color: C.high
           },
-          { label: "Critical Suppliers", value: "2", sub: "< 10 days stockout", color: C.critical },
-          { label: "Avg Confidence", value: "84%", sub: "Above escalation threshold", color: C.success },
-        ].map(k => (
-          <div key={k.label} style={{ background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border} `, boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
-            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6, fontWeight: 500 }}>{k.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: k.color, letterSpacing: "-0.03em", lineHeight: 1, fontFamily: "'Fira Code',sans-serif" }}>{k.value}</div>
-            <div style={{ fontSize: 11, color: C.textLight, marginTop: 8 }}>{k.sub}</div>
+          { label: "CRITICAL SUPPLIERS", value: "2", sub: "< 10 days stockout", color: C.critical },
+          { label: "AVG CONFIDENCE", value: "84%", sub: "Above threshold", color: C.success },
+        ].map((k, i, arr) => (
+          <div key={k.label} style={{ flex: 1, padding: "28px 28px 24px", borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none" }}>
+            <div style={{ fontSize: 9, color: C.textLight, marginBottom: 10, fontWeight: 700, fontFamily: "'Space Mono',monospace", letterSpacing: "0.12em" }}>{k.label}</div>
+            <div style={{ fontSize: 64, fontWeight: 900, color: k.color, letterSpacing: "-0.04em", lineHeight: 1, fontFamily: "'Space Mono',monospace" }}>{k.value}</div>
+            <div style={{ fontSize: 11, color: C.textLight, marginTop: 10, letterSpacing: "0.02em" }}>{k.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Governance + system status */}
-      <div style={{ background: C.brandLight, border: `1px solid #E9D5FF`, borderRadius: 10, padding: "12px 18px", marginBottom: 22, display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: C.brand }}>
-        <span style={{ fontSize: 16, color: C.brand }}><Icons.Shield /></span>
-        <div>
-          <strong>Governance Active.</strong> Agent operates in Assist-Only mode. No purchase orders, emails, or ERP writes execute without human approval token. False positive rate: <strong>12%</strong> — within threshold.
-        </div>
-        <div style={{ marginLeft: "auto", fontSize: 11, color: C.textMid, flexShrink: 0 }}>Polling every 5 min · Last: {new Date().toLocaleTimeString()}</div>
+      <div style={{ background: "#0D1C2B", borderBottom: `1px solid ${C.border}`, padding: "10px 28px", marginBottom: 0, display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "rgba(255,255,255,0.7)" }}>
+        <span style={{ fontSize: 12, color: C.accent }}><Icons.Shield /></span>
+        <span><strong style={{ color: C.accent }}>GOVERNANCE ACTIVE.</strong> Assist-Only mode. No POs, emails, or ERP writes without human approval token. FP rate: <strong style={{ color: "#FFFFFF" }}>12%</strong> — within threshold.</span>
+        <div style={{ marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.4)", flexShrink: 0, fontFamily: "'Space Mono',monospace" }}>POLL / 5MIN · {new Date().toLocaleTimeString()}</div>
       </div>
 
-      {/* Active alerts */}
-      <div style={{ marginBottom: 22 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.01em" }}>Active Disruption Signals</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Active alerts — editorial layout */}
+      <div style={{ marginBottom: 0 }}>
+        <div style={{ fontSize: 9, fontWeight: 900, color: C.textMid, padding: "16px 28px 10px", fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em", borderBottom: `1px solid ${C.border}` }}>ACTIVE DISRUPTION SIGNALS</div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           {alertsToUse.map(a => {
             const cfg = SEV_CFG[a.severity] || SEV_CFG.medium;
+            const isCritical = a.severity === "critical";
+            const cardBg = isCritical ? C.brand : "transparent";
+            const textColor = isCritical ? "#12263A" : C.text;
+            const mutedColor = isCritical ? "rgba(18,38,58,0.6)" : C.textMid;
+            const borderColor = isCritical ? "transparent" : C.border;
             return (
-              <div key={a.id} style={{ background: C.card, borderRadius: 12, border: `1px solid ${C.border} `, overflow: "hidden", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
+              <div key={a.id} style={{ background: cardBg, borderBottom: `1px solid ${borderColor}`, overflow: "hidden", transition: "background 0.2s" }}>
                 <div style={{ display: "flex", alignItems: "stretch" }}>
-                  {/* Left severity bar */}
-                  <div style={{ width: 5, background: cfg.color, flexShrink: 0 }} />
 
-                  {/* Content */}
-                  <div style={{ flex: 1, padding: "16px 20px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  {/* Left severity column — large type */}
+                  <div style={{ width: 72, flexShrink: 0, background: isCritical ? "rgba(18,38,58,0.15)" : `${cfg.color}18`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px 0", borderRight: `1px solid ${isCritical ? "rgba(18,38,58,0.2)" : C.border}` }}>
+                    <div style={{ fontSize: 9, fontWeight: 900, color: isCritical ? "rgba(18,38,58,0.7)" : cfg.color, fontFamily: "'Space Mono',monospace", letterSpacing: "0.1em", writingMode: "vertical-rl", textOrientation: "mixed", transform: "rotate(180deg)" }}>
+                      {a.severity.toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: isCritical ? "#12263A" : cfg.color, fontFamily: "'Space Mono',monospace", marginTop: 8, lineHeight: 1 }}>{a.riskScore}</div>
+                    <div style={{ fontSize: 8, color: isCritical ? "rgba(18,38,58,0.5)" : C.textLight, fontFamily: "'Space Mono',monospace", marginTop: 2 }}>/100</div>
+                  </div>
+
+                  {/* Main content */}
+                  <div style={{ flex: 1, padding: "20px 24px" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 9px", borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border} `, letterSpacing: "0.04em" }}>{cfg.label.toUpperCase()}</span>
-                          <span style={{ fontSize: 11, color: C.textLight }}>{a.id}</span>
-                          <span style={{ fontSize: 11, color: C.textLight }}>· {a.detectedAt}</span>
-                          {a.escalate && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#FEF2F2", color: C.critical, border: `1px solid ${C.criticalBorder} ` }}>🚨 ESCALATE</span>}
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                          <span style={{ fontSize: 9, fontWeight: 900, color: mutedColor, fontFamily: "'Space Mono',monospace", letterSpacing: "0.1em" }}>{a.id} · {a.detectedAt}</span>
+                          {a.escalate && <span style={{ fontSize: 9, fontWeight: 900, padding: "2px 8px", background: isCritical ? "rgba(18,38,58,0.2)" : C.criticalLight, color: isCritical ? "#12263A" : C.critical, letterSpacing: "0.08em", fontFamily: "'Space Mono',monospace" }}>ESCALATE</span>}
                         </div>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 4, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.01em" }}>{a.title}</div>
-                        <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10 }}>{a.supplier} · {a.region} · {a.commodity}</div>
-                        <p style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, margin: 0, marginBottom: 12 }}>{a.summary}</p>
-
-                        {/* Collapsible Reasoning Trace snippet */}
-                        {a.reasoningTrace && a.reasoningTrace.length > 0 && (
-                          <details style={{ background: "#F8FAFC", padding: "10px 14px", borderRadius: 8, border: `1px dashed ${C.border} `, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5, cursor: "pointer", outline: "none" }}>
-                            <summary style={{ fontWeight: 700, color: C.text, marginBottom: 4, outline: "none", userSelect: "none" }}>[+] AI Reasoning Trace : Expand Logic Chain</summary>
-                            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-                              {a.reasoningTrace.map((step, idx) => {
-                                const [label, ...rest] = step.split(":");
-                                return (
-                                  <div key={idx} style={{ display: "flex", gap: 8 }}>
-                                    <span style={{ color: C.brand, fontWeight: 700, whiteSpace: "nowrap" }}>{label}:</span>
-                                    <span>{rest.join(":")}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </details>
-                        )}
+                        <div style={{ fontSize: 18, fontWeight: 800, color: textColor, marginBottom: 4, fontFamily: "'Space Grotesk',sans-serif", letterSpacing: "-0.02em", lineHeight: 1.2 }}>{a.title}</div>
+                        <div style={{ fontSize: 11, color: mutedColor, marginBottom: 12, letterSpacing: "0.02em" }}>{a.supplier} · {a.region} · {a.commodity}</div>
+                        <p style={{ fontSize: 12, color: mutedColor, lineHeight: 1.7, margin: 0 }}>{a.summary}</p>
                       </div>
 
-                      {/* Right metrics */}
-                      <div style={{ marginLeft: 24, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12, flexShrink: 0 }}>
-                        <RiskGauge score={a.riskScore} size={88} />
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, textAlign: "right" }}>
-                          {[["Rev at Risk", a.revenueAtRisk, cfg.color], ["Confidence", `${a.confidenceScore}% `, C.text], ["Stockout", `${a.daysToStockout} d`, a.daysToStockout < 10 ? C.critical : C.high], ["CoD Tier", `T${a.costOfDelayTier} `, cfg.color]].map(([l, v, c]) => (
-                            <div key={l}><div style={{ fontSize: 9, color: C.textLight, letterSpacing: "0.04em" }}>{l}</div><div style={{ fontSize: 12, fontWeight: 700, color: c, fontFamily: "'Sora',sans-serif" }}>{v}</div></div>
-                          ))}
-                        </div>
+                      {/* Right metric strip */}
+                      <div style={{ marginLeft: 28, display: "flex", gap: 20, flexShrink: 0, alignItems: "flex-start", paddingLeft: 24, borderLeft: `1px solid ${isCritical ? "rgba(18,38,58,0.2)" : C.border}` }}>
+                        {[["REV AT RISK", a.revenueAtRisk], ["CONFIDENCE", `${a.confidenceScore}%`], ["STOCKOUT", `${a.daysToStockout}d`]].map(([l, v]) => (
+                          <div key={l} style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 8, color: mutedColor, fontFamily: "'Space Mono',monospace", letterSpacing: "0.1em", marginBottom: 4 }}>{l}</div>
+                            <div style={{ fontSize: 16, fontWeight: 900, color: textColor, fontFamily: "'Space Mono',monospace" }}>{v}</div>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
                     {/* Footer */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.border} ` }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, paddingTop: 14, borderTop: `1px solid ${isCritical ? "rgba(18,38,58,0.15)" : C.border}` }}>
                       <div style={{ display: "flex", gap: 20 }}>
-                        <span style={{ fontSize: 11, color: C.textMid }}><strong>BOM:</strong> {a.bomImpact}</span>
-                        <span style={{ fontSize: 11, color: C.textMid }}><strong>Open POs:</strong> {a.openPOs}</span>
+                        <span style={{ fontSize: 10, color: mutedColor, fontFamily: "'Space Mono',monospace" }}><span style={{ opacity: 0.6 }}>BOM</span> {a.bomImpact}</span>
+                        <span style={{ fontSize: 10, color: mutedColor, fontFamily: "'Space Mono',monospace" }}><span style={{ opacity: 0.6 }}>PO</span> {a.openPOs}</span>
                       </div>
                       <button
                         onClick={() => handleQuickAnalyze(a)}
                         disabled={analyzing}
-                        style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: a.riskScore >= 75 ? C.critical : C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", opacity: analyzing ? 0.6 : 1 }}>
-                        {analyzing ? `${status} ` : "Run Full Analysis →"}
+                        style={{ padding: "8px 20px", border: isCritical ? "2px solid #12263A" : `2px solid ${C.brand}`, background: isCritical ? "#12263A" : "transparent", color: isCritical ? C.brand : C.brand, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em", opacity: analyzing ? 0.6 : 1 }}>
+                        {analyzing ? status : "RUN ANALYSIS →"}
                       </button>
                     </div>
                   </div>
@@ -654,26 +676,28 @@ function MonitorPage({ onAnalyze, globalAlerts, currentProfile }) {
         </div>
       </div>
 
-      {/* Supplier inventory status */}
-      <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Inventory Coverage — Critical SKUs</div>
+      {/* Supplier inventory status — no-card, table style */}
+      <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 0 }}>
+        <div style={{ fontSize: 9, fontWeight: 900, color: C.textLight, padding: "16px 28px 10px", fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em", borderBottom: `1px solid ${C.border}` }}>INVENTORY COVERAGE — CRITICAL SKUS</div>
         {[
           { sku: "SKU-4421", name: "Processor Module A", days: 8, max: 30, status: "critical" },
           { sku: "SKU-4422", name: "Memory Module B", days: 8, max: 30, status: "critical" },
           { sku: "SKU-5891", name: "Main PCB Assembly", days: 12, max: 30, status: "warning" },
           { sku: "SKU-3310", name: "Polymer Housing", days: 18, max: 30, status: "ok" },
           { sku: "SKU-2200", name: "Capacitor Array", days: 22, max: 30, status: "ok" },
-        ].map(s => {
+        ].map((s, i) => {
           const barColor = s.status === "critical" ? C.critical : s.status === "warning" ? C.high : C.success;
+          const rowBg = s.status === "critical" ? `${C.critical}08` : "transparent";
           return (
-            <div key={s.sku} style={{ marginBottom: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                <div><span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{s.name}</span><span style={{ fontSize: 11, color: C.textLight, marginLeft: 8 }}>({s.sku})</span></div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: barColor, fontFamily: "'Sora',sans-serif" }}>{s.days}d</span>
+            <div key={s.sku} style={{ display: "flex", alignItems: "center", gap: 24, padding: "14px 28px", borderBottom: `1px solid ${C.border}`, background: rowBg }}>
+              <div style={{ fontSize: 9, fontFamily: "'Space Mono',monospace", color: C.textLight, width: 72, flexShrink: 0 }}>{s.sku}</div>
+              <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: C.text }}>{s.name}</div>
+              <div style={{ width: 200, flexShrink: 0 }}>
+                <div style={{ height: 3, background: `${C.border}`, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${(s.days / s.max) * 100}%`, background: barColor, transition: "width 0.6s ease" }} />
+                </div>
               </div>
-              <div style={{ height: 6, background: "#F1F5F9", borderRadius: 999 }}>
-                <div style={{ height: "100%", width: `${(s.days / s.max) * 100}% `, background: barColor, borderRadius: 999, transition: "width 0.6s ease" }} />
-              </div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: barColor, fontFamily: "'Space Mono',monospace", width: 36, textAlign: "right", flexShrink: 0 }}>{s.days}<span style={{ fontSize: 9, fontWeight: 400 }}>d</span></div>
             </div>
           );
         })}
@@ -941,7 +965,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <span style={{ fontSize: 10, fontWeight: 800, color: cfg.color, letterSpacing: "0.06em", padding: "4px 10px", background: cfg.color + "15", borderRadius: 999, border: `1px solid ${cfg.border} ` }}>{cfg.label.toUpperCase()} — {selected.id}</span>
-              {selected.escalate && <span style={{ fontSize: 10, fontWeight: 700, color: C.critical, padding: "3px 9px", background: C.criticalLight, borderRadius: 999, border: `1px solid ${C.criticalBorder} ` }}>🚨 ESCALATION REQUIRED</span>}
+              {selected.escalate && <span style={{ fontSize: 10, fontWeight: 700, color: C.critical, padding: "3px 9px", background: C.criticalLight, border: `1px solid ${C.criticalBorder} ` }}>ESCALATION REQUIRED</span>}
             </div>
             <div style={{ fontSize: 22, fontWeight: 900, color: C.text, fontFamily: "'Sora',sans-serif", letterSpacing: "-0.02em", marginBottom: 4 }}>{selected.title}</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1106,7 +1130,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: 11, color: C.textLight }}>🔒 Human approval required before sending</div>
+            <div style={{ fontSize: 11, color: C.textLight }}>Human approval required before sending</div>
             {emailStatus === "pending" ? (
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => handleAction("email", "dismissed")} disabled={emailSending}
@@ -1142,7 +1166,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: 11, color: C.textLight }}>🔒 Human approval required before dispatch</div>
+            <div style={{ fontSize: 11, color: C.textLight }}>Human approval required before dispatch</div>
             {["pending", "previewing"].includes(voiceStatus) ? (
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => handleVoiceAction("dismissed")} disabled={voiceSending}
@@ -1171,7 +1195,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
               </div>
             ) : (
               <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${voiceStatus === "dispatched" ? C.success : C.border} `, background: voiceStatus === "dispatched" ? C.successLight : "#F1F5F9", color: voiceStatus === "dispatched" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
-                {voiceStatus === "dispatched" ? "✓ Dispatched" : "Dismissed"}
+                {voiceStatus === "dispatched" ? "Dispatched" : "Dismissed"}
               </div>
             )}
           </div>
@@ -1183,10 +1207,10 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>ERP Adjustment Flag</div>
             <span style={{ fontSize: 10, fontWeight: 800, color: erpStatus === "pending" ? C.textLight : (erpStatus === "approved" ? C.success : C.textMid), background: erpStatus === "pending" ? "#F8FAFC" : (erpStatus === "approved" ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${erpStatus === "pending" ? C.border : (erpStatus === "approved" ? C.success : C.border)} ` }}>
-              {erpStatus === "pending" ? "◈ SIMULATED ONLY" : (erpStatus === "approved" ? "✓ EXECUTED" : "DISMISSED")}
+              {erpStatus === "pending" ? "[ SIM ] SIMULATED ONLY" : (erpStatus === "approved" ? "[ OK ] EXECUTED" : "DISMISSED")}
             </span>
           </div>
-          {[["Action", "Safety stock threshold review"], ["System", "SAP S/4HANA"], ["Reorder Point", "+20% for SKU-4421, SKU-4422 for 45 days"], ["Safety Stock Rec", "Build 30-day buffer from alternate source"], ["Status", "🔒 SIMULATED — No write performed"]].map(([k, v]) => (
+          {[["Action", "Safety stock threshold review"], ["System", "SAP S/4HANA"], ["Reorder Point", "+20% for SKU-4421, SKU-4422 for 45 days"], ["Safety Stock Rec", "Build 30-day buffer from alternate source"], ["Status", "[ SIM ] SIMULATED — No write performed"]].map(([k, v]) => (
             <div key={k} style={{ display: "flex", gap: 12, marginBottom: 8, alignItems: "flex-start" }}>
               <span style={{ fontSize: 10, color: C.textLight, fontWeight: 700, minWidth: 90, paddingTop: 2, letterSpacing: "0.03em" }}>{k.toUpperCase()}</span>
               <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>{v}</span>
@@ -1207,7 +1231,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
               </div>
             ) : (
               <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${erpStatus === "approved" ? C.success : C.border} `, background: erpStatus === "approved" ? C.successLight : "#F1F5F9", color: erpStatus === "approved" ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'Fira Sans',sans-serif" }}>
-                {erpStatus === "approved" ? "✓ Write Approved" : "Dismissed"}
+                {erpStatus === "approved" ? "Write Approved" : "Dismissed"}
               </div>
             )}
           </div>
@@ -1308,76 +1332,70 @@ function PlaybookPage({ globalAlerts }) {
   const displayLibrary = library.length > 0 ? library : fallbackLibrary;
 
   return (
-    <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
-      {/* Overview stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 22 }}>
+    <div style={{ fontFamily: "'Space Grotesk',sans-serif", maxWidth: 1200 }}>
+      {/* KPI stats — borderless editorial */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}` }}>
         {[
-          ["Active Mitigations", String(displayLibrary.length), C.brand],
-          ["Archived Strategies", "85", C.textMid],
-          ["Avg Risk Reduction", "68%", C.success],
-          ["Simulated Outcomes", "1,204", C.text]
-        ].map(([l, v, c]) => (
-          <div key={l} style={{ flex: 1, background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border} ` }}>
-            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6 }}>{l}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: c, fontFamily: "'Fira Code',sans-serif", letterSpacing: "-0.03em" }}>{v}</div>
+          ["ACTIVE MITIGATIONS", String(displayLibrary.length), C.brand],
+          ["ARCHIVED STRATEGIES", "85", C.textMid],
+          ["AVG RISK REDUCTION", "68%", C.success],
+          ["SIMULATED OUTCOMES", "1,204", C.text]
+        ].map(([l, v, c], i, arr) => (
+          <div key={l} style={{ flex: 1, padding: "28px 28px 24px", borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none" }}>
+            <div style={{ fontSize: 9, color: C.textLight, marginBottom: 10, fontWeight: 700, fontFamily: "'Space Mono',monospace", letterSpacing: "0.12em" }}>{l}</div>
+            <div style={{ fontSize: 64, fontWeight: 900, color: c, letterSpacing: "-0.04em", lineHeight: 1, fontFamily: "'Space Mono',monospace" }}>{v}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: C.card, borderRadius: 12, padding: "20px 22px", border: `1px solid ${C.border} ` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Mitigation Library</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button style={{ padding: "6px 12px", border: `1px solid ${C.border} `, borderRadius: 8, background: C.bg, fontSize: 12, color: C.textMid, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><Icons.FileText /> Filter</button>
-            <button style={{ padding: "6px 12px", border: "none", borderRadius: 8, background: C.brand, color: "white", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>+ New Strategy</button>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {displayLibrary.map(p => (
-            <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", background: C.bg, borderRadius: 10, border: `1px solid ${C.border} ` }}>
-              <div style={{ flex: 1.5 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{p.action}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: p.status === "Active" ? C.successLight : "#E2E8F0", color: p.status === "Active" ? C.success : C.textMid }}>{p.status.toUpperCase()}</span>
-                </div>
-                <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6 }}>{p.description}</div>
-                <div style={{ display: "flex", gap: 12, fontSize: 11, color: C.textLight }}>
-                  <span><strong style={{ color: C.textMid }}>Category:</strong> {p.category}</span>
-                  <span><strong style={{ color: C.textMid }}>Trade-off:</strong> {p.tradeOff}</span>
-                </div>
-
-                {/* Collapsible Reasoning Trace snippet for Playbook */}
-                {p.reasoningTrace && p.reasoningTrace.length > 0 && (
-                  <details style={{ marginTop: 10, background: C.card, padding: "10px 14px", borderRadius: 6, border: `1px solid ${C.border} `, fontFamily: "monospace", fontSize: 11, color: C.textMid, lineHeight: 1.5, cursor: "pointer", outline: "none" }}>
-                    <summary style={{ fontWeight: 700, color: C.brand, marginBottom: 4, letterSpacing: "0.02em", outline: "none", userSelect: "none" }}>[+] Simulation Reasoning : Expand Steps</summary>
-                    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-                      {p.reasoningTrace.map((step, idx) => {
-                        const [label, ...rest] = step.split(":");
-                        return (
-                          <div key={idx} style={{ display: "flex", gap: 8 }}>
-                            <span style={{ color: C.text, fontWeight: 700, whiteSpace: "nowrap" }}>{label}:</span>
-                            <span>{rest.join(":")}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </details>
-                )}
-              </div>
-              <div style={{ display: "flex", gap: 24, flexShrink: 0, paddingLeft: 16, borderLeft: `1px dashed ${C.border} ` }}>
-                {[["Cost", p.cost], ["Time", p.time], ["Score", p.composite]].map(([k, v]) => (
-                  <div key={k} style={{ textAlign: "center", minWidth: 40 }}>
-                    <div style={{ fontSize: 10, color: C.textLight, marginBottom: 4 }}>{k}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: k === "Score" ? C.brand : C.text, fontFamily: "'Sora',sans-serif" }}>{v}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+      {/* Section header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 28px", borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: 9, fontWeight: 900, color: C.textLight, fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em" }}>MITIGATION LIBRARY</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button style={{ padding: "6px 14px", border: `1px solid ${C.border}`, background: "transparent", fontSize: 11, color: C.textMid, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>FILTER</button>
+          <button style={{ padding: "6px 14px", border: `1px solid ${C.brand}`, background: C.brandLight, color: C.brand, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>+ NEW STRATEGY</button>
         </div>
       </div>
-    </div >
+
+      {/* Strategy rows — no cards */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {displayLibrary.map((p, i) => (
+          <div key={p.id} style={{ display: "flex", alignItems: "stretch", borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+            {/* Rank col */}
+            <div style={{ width: 60, display: "flex", alignItems: "center", justifyContent: "center", fontSize: i < 3 ? 28 : 18, fontWeight: 900, color: i === 0 ? C.brand : i === 1 ? C.high : C.textLight, fontFamily: "'Space Mono',monospace", borderRight: `1px solid ${C.border}`, flexShrink: 0 }}>#{i + 1}</div>
+
+            {/* Content */}
+            <div style={{ flex: 1, padding: "18px 24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: C.text, fontFamily: "'Space Grotesk',sans-serif" }}>{p.action}</span>
+                <span style={{ fontSize: 8, fontWeight: 900, padding: "2px 8px", background: p.status === "Active" ? C.accentLight : "rgba(255,255,255,0.06)", color: p.status === "Active" ? C.accent : C.textMid, fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em" }}>{p.status?.toUpperCase()}</span>
+                <span style={{ fontSize: 8, color: C.textLight, fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em" }}>{p.category}</span>
+              </div>
+              <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6, lineHeight: 1.6 }}>{p.description}</div>
+              <div style={{ fontSize: 11, color: C.textLight }}><span style={{ color: C.textMid, fontWeight: 600 }}>Trade-off:</span> {p.tradeOff}</div>
+              {p.reasoningTrace && p.reasoningTrace.length > 0 && (
+                <details style={{ marginTop: 10, background: "#0D1C2B", padding: "10px 14px", border: `1px solid ${C.border}`, fontFamily: "'Space Mono',monospace", fontSize: 11, color: C.textMid, lineHeight: 1.6, cursor: "pointer" }}>
+                  <summary style={{ fontWeight: 700, color: C.brand, letterSpacing: "0.04em" }}>[+] SIMULATION REASONING</summary>
+                  <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
+                    {p.reasoningTrace.map((step, idx) => { const [label, ...rest] = step.split(":"); return (<div key={idx} style={{ display: "flex", gap: 8 }}><span style={{ color: C.brand, whiteSpace: "nowrap" }}>{label}:</span><span>{rest.join(":")}</span></div>); })}
+                  </div>
+                </details>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: "flex", gap: 0, flexShrink: 0, borderLeft: `1px solid ${C.border}` }}>
+              {[["COST", p.cost], ["TIME", p.time], ["SCORE", p.composite]].map(([k, v]) => (
+                <div key={k} style={{ textAlign: "center", padding: "18px 20px", borderLeft: k !== "COST" ? `1px solid ${C.border}` : "none" }}>
+                  <div style={{ fontSize: 8, color: C.textLight, fontFamily: "'Space Mono',monospace", letterSpacing: "0.1em", marginBottom: 6 }}>{k}</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: k === "SCORE" ? C.brand : C.text, fontFamily: "'Space Mono',monospace" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1398,32 +1416,29 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
   }, [currentProfile]);
 
   return (
-    <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
-      {/* Map header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+    <div style={{ fontFamily: "'Space Grotesk',sans-serif", maxWidth: 1200 }}>
+      {/* Header strip */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 28px", borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}` }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Global Network Exposure</div>
-          <div style={{ fontSize: 13, color: C.textMid }}>{pinsToUse.length} active critical nodes detected across 3 continents.</div>
+          <div style={{ fontSize: 9, color: C.textLight, fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em", fontWeight: 900, marginBottom: 4 }}>GLOBAL NETWORK EXPOSURE</div>
+          <div style={{ fontSize: 12, color: C.textMid }}>{pinsToUse.length} active critical nodes across 3 continents</div>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          {["All Suppliers", "Critical Risk", "Tier 1 Only"].map((f, i) => (
-            <button key={f} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${i === 1 ? C.brand : C.border} `, background: i === 1 ? C.brandLight : C.card, color: i === 1 ? C.brand : C.textMid, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{f}</button>
+        <div style={{ display: "flex", gap: 0 }}>
+          {["ALL SUPPLIERS", "CRITICAL RISK", "TIER 1 ONLY"].map((f, i) => (
+            <button key={f} style={{ padding: "7px 16px", border: `1px solid ${C.border}`, borderLeft: i > 0 ? "none" : `1px solid ${C.border}`, background: i === 1 ? C.brandLight : "transparent", color: i === 1 ? C.brand : C.textMid, fontSize: 10, fontWeight: i === 1 ? 900 : 500, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>{f}</button>
           ))}
         </div>
       </div>
 
-      {/* 3D WebGL Globe Container */}
-      <div style={{ borderRadius: 16, height: 480, position: "relative", overflow: "hidden", border: `1px solid rgb(51, 65, 85)`, background: "#050B14", display: "flex", alignItems: "center", justifyContent: "center" }}>
-
-        <div style={{ position: "absolute", top: 20, left: 20, background: "rgba(15, 23, 42, 0.85)", backdropFilter: "blur(4px)", padding: "12px 16px", borderRadius: 10, border: `1px solid rgb(51, 65, 85)`, zIndex: 10, pointerEvents: "none" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", marginBottom: 8, letterSpacing: "0.05em", fontFamily: "'Fira Code', monospace" }}>[ OSINT MAP LEGEND ]</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {[["Critical", C.critical], ["High", C.high], ["Medium", C.medium], ["Low", C.success]].map(([l, c]) => (
-              <div key={l} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#E2E8F0", fontFamily: "'Fira Code', monospace" }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: c, boxShadow: `0 0 6px ${c} 88` }} /> {l} Risk
-              </div>
-            ))}
-          </div>
+      {/* Map — full-bleed, no card */}
+      <div style={{ height: 480, position: "relative", overflow: "hidden", background: "#050B14", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ position: "absolute", top: 16, left: 16, background: "rgba(13,28,43,0.92)", padding: "12px 16px", border: `1px solid rgba(254,197,2,0.2)`, zIndex: 10, pointerEvents: "none" }}>
+          <div style={{ fontSize: 9, fontWeight: 900, color: C.brand, marginBottom: 8, letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace" }}>[ OSINT LEGEND ]</div>
+          {[["Critical", C.critical], ["High", C.high], ["Medium", C.medium], ["Low", C.success]].map(([l, c]) => (
+            <div key={l} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 10, color: "rgba(255,255,255,0.85)", fontFamily: "'Space Mono',monospace", marginBottom: 4 }}>
+              <span style={{ width: 8, height: 8, flexShrink: 0, background: c, boxShadow: `0 0 6px ${c}` }} />{l}
+            </div>
+          ))}
         </div>
 
         <Map
@@ -1436,20 +1451,15 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
             const maritimePenalty = Math.min(15, warningCount * 5);
             const adjustedRisk = Math.min(100, baseRisk + maritimePenalty);
             const threatColor = warningCount >= 3 ? C.critical : (warningCount > 0 ? C.medium : C.success);
-
             return (
               <Marker key={pin.id} longitude={Number(pin.lng)} latitude={Number(pin.lat)} anchor="center">
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", pointerEvents: "auto" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
                   <div style={{ width: 24, height: 24, borderRadius: "50%", background: threatColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: "pingAnim 2s infinite" }}>
-                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: threatColor, border: "2px solid white", boxShadow: "0 2px 4px rgba(0,0,0,0.5)" }} />
+                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: threatColor, border: "2px solid white" }} />
                   </div>
-                  <div style={{ background: "rgba(15, 23, 42, 0.9)", padding: "6px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, color: "#E2E8F0", marginTop: 4, whiteSpace: "nowrap", border: "1px solid rgb(51, 65, 85)", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Fira Code', monospace" }}>
-                    <span>{pin.name} • {adjustedRisk}</span>
-                    {warningCount > 0 && (
-                      <span style={{ background: threatColor, color: "white", padding: "2px 5px", borderRadius: 4, fontSize: 9 }}>
-                        ⚓ {warningCount} Warnings
-                      </span>
-                    )}
+                  <div style={{ background: "rgba(5,11,20,0.95)", padding: "4px 8px", fontSize: 9, fontWeight: 700, color: "#FFFFFF", marginTop: 3, whiteSpace: "nowrap", border: `1px solid rgba(255,255,255,0.15)`, display: "flex", alignItems: "center", gap: 5, fontFamily: "'Space Mono',monospace" }}>
+                    <span>{pin.name} {adjustedRisk}</span>
+                    {warningCount > 0 && <span style={{ background: threatColor, color: "#0D1C2B", padding: "1px 5px", fontSize: 8, fontWeight: 900 }}>{warningCount} WARN</span>}
                   </div>
                 </div>
               </Marker>
@@ -1458,29 +1468,30 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
         </Map>
       </div>
 
-      {/* Supplier List Below */}
-      <div style={{ marginTop: 20 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", background: C.card, borderRadius: 12, overflow: "hidden", border: `1px solid ${C.border} ` }}>
-          <thead style={{ background: C.bg }}>
-            <tr>{["Supplier", "Commodity", "Risk Score", "Status", "Coordinates"].map(h => (
-              <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: C.textLight, textAlign: "left", letterSpacing: "0.04em", borderBottom: `1px solid ${C.border} ` }}>{h}</th>
-            ))}</tr>
-          </thead>
-          <tbody>
-            {pinsToUse.map(pin => (
-              <tr key={pin.id} style={{ borderBottom: `1px solid #F1F5F9` }}>
-                <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700, color: C.text }}>{pin.name}</td>
-                <td style={{ padding: "14px 16px", fontSize: 12, color: C.textMid }}>{pin.commodity}</td>
-                <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 800, color: getRiskColor(Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5))), fontFamily: "'Sora',sans-serif" }}>{Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5))}</td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: getRiskColor(Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5))) + "20", color: getRiskColor(Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5))) }}>{(pin.status || 'unknown').toUpperCase()}</span>
-                </td>
-                <td style={{ padding: "14px 16px", fontSize: 12, color: C.textLight, fontFamily: "monospace" }}>{Number(pin.lat).toFixed(2)}, {Number(pin.lng).toFixed(2)}</td>
+      {/* Supplier table */}
+      <div style={{ fontSize: 9, fontWeight: 900, color: C.textLight, padding: "14px 28px", fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em", borderBottom: `1px solid ${C.border}` }}>SUPPLIER INTELLIGENCE</div>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${C.border}` }}>{["SUPPLIER", "COMMODITY", "RISK SCORE", "STATUS", "COORDINATES"].map(h => (
+            <th key={h} style={{ padding: "10px 28px", fontSize: 9, fontWeight: 900, color: C.textLight, textAlign: "left", letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace" }}>{h}</th>
+          ))}</tr>
+        </thead>
+        <tbody>
+          {pinsToUse.map((pin, i) => {
+            const risk = Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5));
+            const riskColor = getRiskColor(risk);
+            return (
+              <tr key={pin.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                <td style={{ padding: "13px 28px", fontSize: 12, fontWeight: 700, color: C.text }}>{pin.name}</td>
+                <td style={{ padding: "13px 28px", fontSize: 11, color: C.textMid }}>{pin.commodity}</td>
+                <td style={{ padding: "13px 28px", fontSize: 20, fontWeight: 900, color: riskColor, fontFamily: "'Space Mono',monospace" }}>{risk}</td>
+                <td style={{ padding: "13px 28px" }}><span style={{ fontSize: 9, fontWeight: 900, padding: "3px 8px", background: riskColor + "18", color: riskColor, fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em" }}>{(pin.status || "ACTIVE").toUpperCase()}</span></td>
+                <td style={{ padding: "13px 28px", fontSize: 10, color: C.textLight, fontFamily: "'Space Mono',monospace" }}>{Number(pin.lat).toFixed(2)}, {Number(pin.lng).toFixed(2)}</td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -1490,57 +1501,62 @@ function AuditPage({ globalAuditLogs }) {
   const logsToUse = globalAuditLogs && globalAuditLogs.length > 0 ? globalAuditLogs : AUDIT_LOG_MOCK;
 
   return (
-    <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 1200 }}>
-      <div style={{ display: "flex", gap: 14, marginBottom: 22 }}>
-        {[["Analyses Run", logsToUse.length.toString(), C.brand], ["Escalations", logsToUse.filter(l => l.disruptions?.escalated || l.escalated).length.toString(), C.critical], ["HITL Actions", logsToUse.filter(l => l.action).length.toString(), C.success], ["FP Rate", "12%", C.success]].map(([l, v, c]) => (
-          <div key={l} style={{ flex: 1, background: C.card, borderRadius: 12, padding: "18px 20px", border: `1px solid ${C.border} ` }}>
-            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 6 }}>{l}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: c, fontFamily: "'Fira Code',sans-serif", letterSpacing: "-0.03em" }}>{v}</div>
+    <div style={{ fontFamily: "'Space Grotesk',sans-serif", maxWidth: 1200 }}>
+      {/* KPI stats — borderless */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}` }}>
+        {[
+          ["ANALYSES RUN", logsToUse.length.toString(), C.brand],
+          ["ESCALATIONS", logsToUse.filter(l => l.disruptions?.escalated || l.escalated).length.toString(), C.critical],
+          ["HITL ACTIONS", logsToUse.filter(l => l.action).length.toString(), C.success],
+          ["FP RATE", "12%", C.success]
+        ].map(([l, v, c], i, arr) => (
+          <div key={l} style={{ flex: 1, padding: "28px 28px 24px", borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none" }}>
+            <div style={{ fontSize: 9, color: C.textLight, marginBottom: 10, fontWeight: 700, fontFamily: "'Space Mono',monospace", letterSpacing: "0.12em" }}>{l}</div>
+            <div style={{ fontSize: 64, fontWeight: 900, color: c, letterSpacing: "-0.04em", lineHeight: 1, fontFamily: "'Space Mono',monospace" }}>{v}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: C.card, borderRadius: 12, padding: "20px 22px", border: `1px solid ${C.border} ` }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 16, fontFamily: "'Sora',sans-serif" }}>Immutable Audit Trail</div>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>{["ID", "Time", "Action", "Supplier", "Region", "Risk", "Confidence", "Tier", "Escalated"].map(h => (
-              <th key={h} style={{ padding: "9px 12px", fontSize: 10, fontWeight: 700, color: C.textLight, textAlign: "left", letterSpacing: "0.05em", borderBottom: `1px solid ${C.border} ` }}>{h}</th>
-            ))}</tr>
-          </thead>
-          <tbody>
-            {logsToUse.map(r => {
-              const objId = r.id || r.disruption_id?.slice(0, 8);
-              const ts = r.created_at ? new Date(r.created_at).toLocaleString() : r.ts;
+      {/* Section label */}
+      <div style={{ fontSize: 9, fontWeight: 900, color: C.textLight, padding: "14px 28px", fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em", borderBottom: `1px solid ${C.border}` }}>IMMUTABLE AUDIT TRAIL</div>
 
-              const supplier = r.disruptions?.supplier || r.supplier || "-";
-              const region = r.disruptions?.region || r.region || "-";
-              const risk = r.disruptions?.risk_score || r.risk || 0;
-              const confidence = r.disruptions?.confidence_score || r.confidence || 0;
-              const tier = r.disruptions?.cost_of_delay_tier || r.tier || 1;
-              const escalated = r.disruptions?.escalated || r.escalated || false;
-
-              const actionName = (r.action || r.event_type || "SYSTEM LOG").replace(/_/g, " ").toUpperCase();
-
-              return (
-                <tr key={r.id} style={{ borderBottom: `1px solid #F8FAFC` }}>
-                  <td style={{ padding: "12px", fontSize: 12, fontWeight: 600, color: C.brand, fontFamily: "monospace" }}>{objId.toString().slice(0, 8)}</td>
-                  <td style={{ padding: "12px", fontSize: 12, color: C.textMid }}>{ts}</td>
-                  <td style={{ padding: "12px", fontSize: 11, fontWeight: 700, color: C.accent }}>{actionName}</td>
-                  <td style={{ padding: "12px", fontSize: 12, color: C.text }}>{supplier}</td>
-                  <td style={{ padding: "12px", fontSize: 12, color: C.textMid }}>{region}</td>
-                  <td style={{ padding: "12px", fontSize: 13, fontWeight: 800, color: getRiskColor(risk), fontFamily: "'Fira Code',sans-serif" }}>{risk}</td>
-                  <td style={{ padding: "12px", fontSize: 12, color: C.text }}>{confidence}%</td>
-                  <td style={{ padding: "12px", fontSize: 12, fontWeight: 700, color: tier >= 3 ? C.critical : C.high }}>T{tier} ({getTierLabel(tier)})</td>
-                  <td style={{ padding: "12px" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: escalated ? C.critical : C.success, padding: "3px 10px", background: escalated ? C.criticalLight : C.successLight, borderRadius: 999 }}>{escalated ? <><Icons.AlertTriangle /> YES</> : <><Icons.CheckCircle /> NO</>}</span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Table */}
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${C.border}` }}>{["ID", "TIME", "ACTION", "SUPPLIER", "REGION", "RISK", "CONFIDENCE", "TIER", "ESCALATED"].map(h => (
+            <th key={h} style={{ padding: "10px 16px 10px 24px", fontSize: 9, fontWeight: 900, color: C.textLight, textAlign: "left", letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace" }}>{h}</th>
+          ))}</tr>
+        </thead>
+        <tbody>
+          {logsToUse.map((r, i) => {
+            const objId = r.id || r.disruption_id?.slice(0, 8);
+            const ts = r.created_at ? new Date(r.created_at).toLocaleString() : r.ts;
+            const supplier = r.disruptions?.supplier || r.supplier || "-";
+            const region = r.disruptions?.region || r.region || "-";
+            const risk = r.disruptions?.risk_score || r.risk || 0;
+            const confidence = r.disruptions?.confidence_score || r.confidence || 0;
+            const tier = r.disruptions?.cost_of_delay_tier || r.tier || 1;
+            const escalated = r.disruptions?.escalated || r.escalated || false;
+            const actionName = (r.action || r.event_type || "SYSTEM LOG").replace(/_/g, " ").toUpperCase();
+            return (
+              <tr key={r.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                <td style={{ padding: "12px 16px 12px 24px", fontSize: 11, fontWeight: 700, color: C.brand, fontFamily: "'Space Mono',monospace" }}>{objId.toString().slice(0, 8)}</td>
+                <td style={{ padding: "12px 16px", fontSize: 10, color: C.textMid, fontFamily: "'Space Mono',monospace" }}>{ts}</td>
+                <td style={{ padding: "12px 16px", fontSize: 10, fontWeight: 800, color: C.accent, fontFamily: "'Space Mono',monospace", letterSpacing: "0.04em" }}>{actionName}</td>
+                <td style={{ padding: "12px 16px", fontSize: 12, color: C.text }}>{supplier}</td>
+                <td style={{ padding: "12px 16px", fontSize: 11, color: C.textMid }}>{region}</td>
+                <td style={{ padding: "12px 16px", fontSize: 18, fontWeight: 900, color: getRiskColor(risk), fontFamily: "'Space Mono',monospace" }}>{risk}</td>
+                <td style={{ padding: "12px 16px", fontSize: 12, color: C.text }}>{confidence}%</td>
+                <td style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: tier >= 3 ? C.critical : C.high, fontFamily: "'Space Mono',monospace" }}>T{tier}</td>
+                <td style={{ padding: "12px 16px" }}>
+                  <span style={{ fontSize: 9, fontWeight: 900, padding: "3px 10px", color: escalated ? C.critical : C.success, background: escalated ? C.criticalLight : C.successLight, fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em" }}>{escalated ? "YES" : "NO"}</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div style={{ padding: "12px 24px", fontSize: 9, color: C.textLight, fontFamily: "'Space Mono',monospace", borderTop: `1px solid ${C.border}` }}>ALL ENTRIES ARE CRYPTOGRAPHICALLY IMMUTABLE. GDPR-COMPLIANT ERASURE TOKENS APPLIED ON EXPORT.</div>
     </div>
   );
 }
@@ -1592,60 +1608,47 @@ function SettingsPage({ currentProfile, setCurrentProfile, systemProfiles }) {
   };
 
   return (
-    <div style={{ padding: "26px 28px", fontFamily: "'DM Sans',sans-serif", maxWidth: 800 }}>
-      <div style={{ background: C.card, borderRadius: 12, padding: "24px", border: `1px solid ${C.border} ` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Manufacturer Context Profile</div>
-            <div style={{ fontSize: 12, color: C.textMid, marginTop: 4 }}>This JSON context grounds the AI risk engine's logic (Hyper-Personalization).</div>
+    <div style={{ fontFamily: "'Space Grotesk',sans-serif", maxWidth: 700 }}>
+      {/* Header */}
+      <div style={{ padding: "28px 28px 20px", borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: 9, fontWeight: 900, color: C.textLight, fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em", marginBottom: 8 }}>MANUFACTURER CONTEXT PROFILE</div>
+        <div style={{ fontSize: 11, color: C.textMid, marginBottom: 16 }}>This JSON context grounds the AI risk engine's analysis and personalization layer.</div>
+        <select
+          value={currentProfile.name}
+          onChange={handleProfileSelect}
+          disabled={editing}
+          style={{ background: "#0D1C2B", color: C.text, border: `1px solid ${editing ? C.border : C.brand}`, padding: "10px 14px", outline: "none", cursor: editing ? "not-allowed" : "pointer", opacity: editing ? 0.5 : 1, fontFamily: "'Space Mono',monospace", fontSize: 12, letterSpacing: "0.04em", width: "100%" }}
+        >
+          {(systemProfiles || PROFILES).map(p => (<option key={p.name} value={p.name}>{p.name}</option>))}
+        </select>
+      </div>
 
-            <div style={{ marginTop: 16 }}>
-              <select
-                value={currentProfile.name}
-                onChange={handleProfileSelect}
-                disabled={editing}
-                style={{
-                  background: C.bg,
-                  color: C.text,
-                  border: `1px solid ${C.border}`,
-                  padding: "8px 12px",
-                  borderRadius: 6,
-                  outline: "none",
-                  cursor: editing ? "not-allowed" : "pointer",
-                  opacity: editing ? 0.5 : 1,
-                  fontFamily: "'DM Sans', sans-serif"
-                }}
-              >
-                {(systemProfiles || PROFILES).map(p => (
-                  <option key={p.name} value={p.name}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            {!editing ? (
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                {saveSuccess && <span style={{ fontSize: 12, fontWeight: 700, color: C.success, display: "flex", alignItems: "center", gap: 4 }}><Icons.CheckCircle /> Saved to cloud</span>}
-                <button onClick={handleReset} disabled={resetting} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.text, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{resetting ? "Resetting..." : "Reset to Default"}</button>
-                <button onClick={() => setEditing(true)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.text, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Edit JSON</button>
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <button onClick={() => { setEditing(false); setDraft(JSON.stringify(currentProfile, null, 2)); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
-                <button onClick={handleSave} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Save Profile</button>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Actions */}
+      <div style={{ padding: "16px 28px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
+        {!editing ? (
+          <>
+            {saveSuccess && <span style={{ fontSize: 11, fontWeight: 700, color: C.success, fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em", marginRight: 8 }}>SAVED TO CLOUD</span>}
+            <button onClick={handleReset} disabled={resetting} style={{ padding: "8px 18px", border: `1px solid ${C.border}`, background: "transparent", color: C.textMid, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>{resetting ? "RESETTING..." : "RESET TO DEFAULT"}</button>
+            <button onClick={() => setEditing(true)} style={{ padding: "8px 18px", border: `1px solid ${C.brand}`, background: C.brandLight, color: C.brand, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>EDIT JSON</button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => { setEditing(false); setDraft(JSON.stringify(currentProfile, null, 2)); }} style={{ padding: "8px 18px", border: `1px solid ${C.border}`, background: "transparent", color: C.textMid, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>CANCEL</button>
+            <button onClick={handleSave} style={{ padding: "8px 18px", border: "none", background: C.brand, color: "#12263A", fontSize: 11, fontWeight: 900, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>SAVE PROFILE</button>
+          </>
+        )}
+      </div>
 
+      {/* JSON view/edit */}
+      <div style={{ padding: "0" }}>
         {editing ? (
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            style={{ width: "100%", height: 350, padding: "16px", borderRadius: 8, border: `1px solid ${C.brandMid} `, background: C.bg, fontFamily: "monospace", fontSize: 12, color: C.text, resize: "vertical", outline: "none" }}
+            style={{ width: "100%", height: 380, padding: "20px 28px", border: "none", borderBottom: `2px solid ${C.brand}`, background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.text, resize: "none", outline: "none", display: "block" }}
           />
         ) : (
-          <div style={{ width: "100%", height: 350, overflowY: "auto", padding: "16px", borderRadius: 8, border: `1px solid ${C.border} `, background: C.bg, fontFamily: "monospace", fontSize: 12, color: C.text, whiteSpace: "pre-wrap" }}>
+          <div style={{ width: "100%", height: 380, overflowY: "auto", padding: "20px 28px", background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.textMid, whiteSpace: "pre-wrap", borderBottom: `1px solid ${C.border}` }}>
             {JSON.stringify(currentProfile, null, 2)}
           </div>
         )}
@@ -1777,26 +1780,32 @@ export default function OsirisApp() {
   return (
     <>
       <style>{`
-  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
-        * { box- sizing: border - box; margin: 0; padding: 0;
-}
-        body { background: #FAF5FF; font - family: 'Fira Sans', system - ui, sans - serif; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pingAnim { 0 % { transform: scale(1); opacity: .8; } 75 %, 100 % { transform: scale(2.4); opacity: 0; } }
-@keyframes pulseAnim { 0 %, 100 % { opacity: 1; } 50 % { opacity: 0.5; } }
-@keyframes spin { 100 % { transform: rotate(360deg); } }
-        button { font - family: 'Fira Sans', system - ui, sans - serif; }
-        :: -webkit - scrollbar { width: 5px; height: 5px; }
-        :: -webkit - scrollbar - thumb { background: #E9D5FF; border - radius: 99px; }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Space Grotesk', system-ui, sans-serif; border-radius: 0 !important; }
+        body { background: #FFFFFF; font-family: 'Space Grotesk', system-ui, sans-serif; color: #0D1C2B; }
+        button { font-family: 'Space Grotesk', system-ui, sans-serif; cursor: pointer; }
+        input, select, textarea { font-family: 'Space Grotesk', system-ui, sans-serif; }
+        img { border-radius: 0 !important; }
+        .circle-dot { border-radius: 50% !important; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pingAnim { 0% { transform: scale(1); opacity: .8; } 75%, 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes pulseAnim { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
+@keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        ::-webkit-scrollbar { width: 3px; height: 3px; }
+        ::-webkit-scrollbar-thumb { background: #FEC502; }
+        ::-webkit-scrollbar-track { background: transparent; }
 `}</style>
 
       <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         <Sidebar page={page} setPage={setPage} currentProfile={currentProfile} setCurrentProfile={setCurrentProfile} />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bg, height: "100vh", overflow: "hidden" }}>
+          <TickerTape alerts={globalAlerts} />
           <Topbar title={meta.title} subtitle={meta.subtitle} flash={showToast !== null} />
 
           {showToast && (
-            <div style={{ position: "absolute", top: 16, right: 300, background: C.card, border: `1px solid ${C.brand}`, color: C.text, padding: "12px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600, zIndex: 9999, transition: "opacity 0.3s", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
+            <div style={{ position: "absolute", top: 16, right: 300, background: C.sidebar, border: `2px solid ${C.brand}`, color: C.text, padding: "12px 18px", fontSize: 12, fontWeight: 700, zIndex: 9999, transition: "opacity 0.3s", boxShadow: "0 4px 24px rgba(0,0,0,0.6)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.04em" }}>
               {showToast}
             </div>
           )}

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSIRIS Supply Risk Scanner</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 340px;
+      min-height: 200px;
+      background: #FFFFFF;
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      color: #0D1C2B;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #12263A;
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 2px solid #FEC502;
+    }
+
+    .header-logo img {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+    }
+
+    .header-text .brand {
+      font-size: 15px;
+      font-weight: 800;
+      color: #FEC502;
+      letter-spacing: 0.1em;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .header-text .sub {
+      font-size: 9px;
+      color: rgba(255, 255, 255, 0.45);
+      letter-spacing: 0.14em;
+      margin-top: 1px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .header-badge {
+      margin-left: auto;
+      background: #D36135;
+      color: white;
+      font-size: 11px;
+      font-weight: 900;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      padding: 8px 16px;
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #30BCED;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.35;
+      }
+    }
+
+    /* ── Alert list ── */
+    .alert-list {
+      padding: 8px 0;
+    }
+
+    .alert-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      cursor: default;
+      transition: background 0.1s;
+    }
+
+    .alert-item:hover {
+      background: #F6F8FA;
+    }
+
+    .alert-item:last-child {
+      border-bottom: none;
+    }
+
+    .alert-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+
+    .alert-sev {
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      padding: 2px 6px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .alert-id {
+      font-size: 9px;
+      font-weight: 700;
+      color: #7A94A8;
+      font-family: 'Space Mono', monospace;
+      margin-left: auto;
+    }
+
+    .alert-score {
+      font-size: 22px;
+      font-weight: 900;
+      font-family: 'Space Mono', monospace;
+      line-height: 1;
+    }
+
+    .alert-score-label {
+      font-size: 8px;
+      color: #7A94A8;
+      letter-spacing: 0.08em;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .alert-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0D1C2B;
+      margin-left: 36px;
+    }
+
+    .alert-meta {
+      font-size: 10px;
+      color: #3A5068;
+      margin-left: 36px;
+      margin-top: 2px;
+    }
+
+    /* ⚡ Quick-launch button */
+    .alert-launch {
+      display: block;
+      margin: 8px 0 2px 0;
+      padding: 6px 10px;
+      background: #12263A;
+      color: #FEC502 !important;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      font-family: 'Space Mono', monospace;
+      text-decoration: none !important;
+      text-align: center;
+      transition: background 0.15s;
+    }
+
+    .alert-launch:hover {
+      background: #0D1C2B;
+    }
+
+    /* ── Empty state ── */
+    .empty {
+      padding: 28px 16px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .empty-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0D1C2B;
+      margin-bottom: 4px;
+    }
+
+    .empty-sub {
+      font-size: 11px;
+      color: #7A94A8;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 10px 16px;
+      border-top: 1px solid rgba(0, 0, 0, 0.07);
+      background: #F6F8FA;
+    }
+
+    .footer a {
+      display: block;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #12263A;
+      text-decoration: none;
+      letter-spacing: 0.06em;
+      font-family: 'Space Mono', monospace;
+      padding: 7px 0;
+      background: #FEC502;
+      transition: background 0.15s;
+    }
+
+    .footer a:hover {
+      background: #d4a500;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <img src="icons/icon128.png" alt="OSIRIS" />
+    </div>
+    <div class="header-text">
+      <div class="brand">OSIRIS</div>
+      <div class="sub">SUPPLY RISK SCANNER</div>
+    </div>
+    <div class="header-badge" id="header-count">0</div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <span id="status-text">SCANNING PAGE...</span>
+  </div>
+
+  <!-- Alert list -->
+  <div id="content"></div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a href="http://localhost:3000" target="_blank">OPEN OSIRIS DASHBOARD →</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>
