@@ -221,6 +221,9 @@
       padding: 10px 16px;
       border-top: 1px solid rgba(0, 0, 0, 0.07);
       background: #F6F8FA;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
     }
 
     .footer a {
@@ -239,6 +242,26 @@
 
     .footer a:hover {
       background: #d4a500;
+    }
+
+    .footer-panel-btn {
+      display: block;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #FEC502;
+      letter-spacing: 0.06em;
+      font-family: 'Space Mono', monospace;
+      padding: 7px 0;
+      background: #12263A;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s;
+    }
+
+    .footer-panel-btn:hover {
+      background: #0D1C2B;
     }
   </style>
 </head>
@@ -269,6 +292,7 @@
   <!-- Footer -->
   <div class="footer">
     <a href="http://localhost:3000" target="_blank">OPEN OSIRIS DASHBOARD →</a>
+    <button class="footer-panel-btn" id="open-side-panel">OPEN RISK SIDE PANEL</button>
   </div>
 
   <script src="popup.js"></script>

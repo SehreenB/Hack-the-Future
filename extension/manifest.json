@@ -1,19 +1,24 @@
 {
     "manifest_version": 3,
     "name": "OSIRIS Supply Risk Scanner",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Scans web pages for supply chain risk signals and alerts you — powered by OSIRIS Supply Co-Pilot.",
     "permissions": [
         "storage",
         "notifications",
         "activeTab",
-        "scripting"
+        "scripting",
+        "contextMenus",
+        "sidePanel"
     ],
     "host_permissions": [
         "<all_urls>"
     ],
     "background": {
         "service_worker": "background.js"
+    },
+    "side_panel": {
+        "default_path": "sidepanel.html"
     },
     "content_scripts": [
         {

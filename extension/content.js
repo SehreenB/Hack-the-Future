@@ -4,6 +4,98 @@
 
 const OSIRIS_URL = "http://localhost:3000";
 
+// ── Feature 3: Supplier Website Auto-Detection ────────────────────────────────
+// Maps known supplier hostnames → the OSIRIS alert they're associated with.
+const SUPPLIER_DOMAINS = {
+    // Semiconductors / PCB
+    "tsmc.com": { id: "NXS-001", severity: "critical", title: "Taiwan Strait Corridor Closure", riskScore: 87 },
+    "taiwansemiconductor.com": { id: "NXS-001", severity: "critical", title: "Taiwan Strait Corridor Closure", riskScore: 87 },
+    "foxconn.com": { id: "NXS-001", severity: "critical", title: "Taiwan Strait Corridor Closure", riskScore: 87 },
+    "honhai.com": { id: "NXS-001", severity: "critical", title: "Taiwan Strait Corridor Closure", riskScore: 87 },
+    "samsung.com": { id: "NXS-001", severity: "high", title: "Taiwan Strait Supply Pressure", riskScore: 68 },
+    "skhynix.com": { id: "NXS-001", severity: "high", title: "Taiwan Strait Supply Pressure", riskScore: 63 },
+    // Shipping / Logistics
+    "maersk.com": { id: "NXS-002", severity: "high", title: "Red Sea Rerouting — Transit +14 Days", riskScore: 72 },
+    "msc.com": { id: "NXS-002", severity: "high", title: "Red Sea Rerouting — Transit +14 Days", riskScore: 72 },
+    "cmacgm.com": { id: "NXS-002", severity: "high", title: "Red Sea Rerouting — Transit +14 Days", riskScore: 72 },
+    "hapag-lloyd.com": { id: "NXS-002", severity: "high", title: "Red Sea Rerouting — Transit +14 Days", riskScore: 72 },
+    // Chemicals / Polymers
+    "basf.com": { id: "NXS-003", severity: "medium", title: "BASF Freeport Plant Explosion", riskScore: 54 },
+    "basf-corp.com": { id: "NXS-003", severity: "medium", title: "BASF Freeport Plant Explosion", riskScore: 54 },
+    // Automotive
+    "bosch.com": { id: "NXS-002", severity: "high", title: "Red Sea Rerouting Impacts Auto Parts", riskScore: 65 },
+    "continental.com": { id: "NXS-002", severity: "high", title: "Red Sea Rerouting Impacts Auto Parts", riskScore: 65 },
+};
+
+const BANNER_COLORS = {
+    critical: { bg: "#7f1d1d", border: "#D36135", badge: "#D36135", text: "#fee2e2" },
+    high: { bg: "#431407", border: "#A63C06", badge: "#A63C06", text: "#fed7aa" },
+    medium: { bg: "#422006", border: "#d4a500", badge: "#d4a500", text: "#fef3c7" },
+    low: { bg: "#1e3a5f", border: "#2563eb", badge: "#2563eb", text: "#dbeafe" },
+};
+
+function showSupplierBanner() {
+    const hostname = window.location.hostname.replace(/^www\./, "");
+    // Check exact match or if hostname ends with a known domain (e.g. subdomain.tsmc.com)
+    const match = SUPPLIER_DOMAINS[hostname] ||
+        Object.entries(SUPPLIER_DOMAINS).find(([domain]) => hostname.endsWith("." + domain) || hostname === domain)?.[1];
+    if (!match) return;
+
+    const colors = BANNER_COLORS[match.severity] || BANNER_COLORS.medium;
+    const severityLabel = match.severity.toUpperCase();
+
+    const banner = document.createElement("div");
+    banner.id = "osiris-supplier-banner";
+    banner.setAttribute("style", `
+        all: initial;
+        display: flex !important;
+        align-items: center !important;
+        gap: 14px !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 2147483647 !important;
+        background: ${colors.bg} !important;
+        border-bottom: 2px solid ${colors.border} !important;
+        padding: 11px 20px !important;
+        font-family: 'Segoe UI', system-ui, sans-serif !important;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.5) !important;
+    `);
+
+    banner.innerHTML = `
+        <span style="all:initial; display:inline-block; background:${colors.badge}; color:#fff; font-size:10px; font-weight:900; padding:3px 9px; border-radius:3px; letter-spacing:0.1em; font-family:'Courier New',monospace; flex-shrink:0;">
+            ⚠ OSIRIS · ${severityLabel}
+        </span>
+        <span style="all:initial; display:inline-block; font-size:13px; font-weight:600; color:${colors.text}; flex:1; font-family:'Segoe UI',system-ui,sans-serif;">
+            This supplier has an active OSIRIS alert: <strong style="color:white;">${match.title}</strong>
+            <span style="color:${colors.badge}; font-weight:700; font-family:'Courier New',monospace; margin-left:8px;">Risk ${match.riskScore}/100</span>
+        </span>
+        <a href="${OSIRIS_URL}?alert=${match.id}&page=risk" target="_blank"
+            style="all:initial; display:inline-block; background:${colors.badge}; color:#fff; font-size:11px; font-weight:700; padding:7px 14px; border-radius:4px; cursor:pointer; text-decoration:none; font-family:'Courier New',monospace; letter-spacing:0.05em; flex-shrink:0; white-space:nowrap;">
+            Open in OSIRIS →
+        </a>
+        <button id="osiris-banner-close"
+            style="all:initial; display:inline-block; background:rgba(255,255,255,0.15); color:${colors.text}; border:none; border-radius:3px; padding:5px 10px; font-size:14px; line-height:1; cursor:pointer; flex-shrink:0;">
+            ✕
+        </button>
+    `;
+
+    // Push page content down to avoid banner overlap
+    document.body.style.marginTop = "52px";
+    document.body.insertAdjacentElement("beforebegin", banner);
+    // Actually prepend as first child of documentElement
+    document.documentElement.insertBefore(banner, document.body);
+
+    document.getElementById("osiris-banner-close")?.addEventListener("click", () => {
+        banner.remove();
+        document.body.style.marginTop = "";
+    });
+}
+
+// Run banner check immediately (before DOM scan)
+showSupplierBanner();
+
 // ── Risk database: keywords → alert data ──────────────────────────────────────
 // In production this would be fetched from the OSIRIS backend.
 // For the demo, it mirrors the active alerts in NexusApp.jsx.

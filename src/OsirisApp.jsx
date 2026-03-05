@@ -141,27 +141,70 @@ const AUDIT_LOG_MOCK = [
 ];
 
 const PINS_NORTHSTAR = [
-  { id: "SUP-001", name: "TSMC", lat: 24.15, lng: 120.67, risk: 87, commodity: "Semiconductors", status: "critical" },
-  { id: "SUP-002", name: "Hon Hai", lat: 22.32, lng: 114.17, risk: 82, commodity: "PCB Assembly", status: "critical" },
-  { id: "SUP-003", name: "BASF", lat: 28.98, lng: -95.37, risk: 54, commodity: "Polymers", status: "medium" },
-  { id: "SUP-004", name: "Murata", lat: 35.01, lng: 135.77, risk: 28, commodity: "Passives", status: "low" },
-  { id: "SUP-005", name: "Flex Ltd", lat: 20.66, lng: -103.35, risk: 22, commodity: "Assembly", status: "low" },
+  // Critical
+  { id: "SUP-001", name: "TSMC Taiwan", lat: 24.15, lng: 120.67, risk: 87, commodity: "Semiconductors", status: "critical", tier: 1 },
+  { id: "SUP-002", name: "Hon Hai Shenzhen", lat: 22.32, lng: 114.17, risk: 82, commodity: "PCB Assembly", status: "critical", tier: 1 },
+  { id: "SUP-014", name: "Yangtze Memory", lat: 30.59, lng: 114.30, risk: 79, commodity: "NAND Flash", status: "critical", tier: 1 },
+  // High
+  { id: "SUP-006", name: "Samsung Kiheung", lat: 37.23, lng: 127.10, risk: 68, commodity: "DRAM", status: "high", tier: 1 },
+  { id: "SUP-007", name: "SK Hynix Icheon", lat: 37.28, lng: 127.44, risk: 63, commodity: "Memory", status: "high", tier: 1 },
+  { id: "SUP-008", name: "Nidec Kyoto", lat: 35.01, lng: 135.75, risk: 61, commodity: "Motors", status: "high", tier: 2 },
+  { id: "SUP-015", name: "Foxconn Zhengzhou", lat: 34.74, lng: 113.62, risk: 71, commodity: "Final Assembly", status: "high", tier: 1 },
+  // Medium
+  { id: "SUP-003", name: "BASF Gulf Coast", lat: 28.98, lng: -95.37, risk: 54, commodity: "Polymers", status: "medium", tier: 1 },
+  { id: "SUP-009", name: "Corning Ithaca", lat: 42.09, lng: -76.80, risk: 48, commodity: "Display Glass", status: "medium", tier: 2 },
+  { id: "SUP-010", name: "Celestica Toronto", lat: 43.70, lng: -79.42, risk: 43, commodity: "EMS", status: "medium", tier: 2 },
+  { id: "SUP-013", name: "Jabil Singapore", lat: 1.35, lng: 103.82, risk: 50, commodity: "EMS", status: "medium", tier: 2 },
+  { id: "SUP-016", name: "TE Connectivity Bern", lat: 46.95, lng: 7.45, risk: 37, commodity: "Connectors", status: "medium", tier: 2 },
+  // Low
+  { id: "SUP-004", name: "Murata Nagaokakyo", lat: 35.01, lng: 135.77, risk: 18, commodity: "Passives", status: "low", tier: 2 },
+  { id: "SUP-005", name: "Flex Ltd Guadalajara", lat: 20.66, lng: -103.35, risk: 22, commodity: "Assembly", status: "low", tier: 2 },
+  { id: "SUP-011", name: "Amphenol Wallingford", lat: 41.45, lng: -72.82, risk: 15, commodity: "Connectors", status: "low", tier: 2 },
+  { id: "SUP-012", name: "Vishay Malvern", lat: 40.03, lng: -75.51, risk: 19, commodity: "Passives", status: "low", tier: 2 },
 ];
 
 const PINS_RHEINWERK = [
-  { id: "SUP-R01", name: "Stuttgart Assembly", lat: 48.77, lng: 9.18, risk: 42, commodity: "Final Assembly", status: "medium" },
-  { id: "SUP-R02", name: "BASF Freeport", lat: 28.98, lng: -95.37, risk: 85, commodity: "Polymers", status: "critical" },
-  { id: "SUP-R03", name: "Suez Transit", lat: 29.93, lng: 32.56, risk: 88, commodity: "Logistics", status: "critical" },
-  { id: "SUP-R04", name: "Istanbul Hub", lat: 41.00, lng: 28.97, risk: 65, commodity: "Metals", status: "high" },
-  { id: "SUP-R05", name: "Prague Plant", lat: 50.07, lng: 14.43, risk: 25, commodity: "Electronics", status: "low" },
+  // Critical
+  { id: "SUP-R01", name: "Stuttgart Assembly", lat: 48.77, lng: 9.18, risk: 88, commodity: "Final Assembly", status: "critical", tier: 1 },
+  { id: "SUP-R02", name: "BASF Freeport", lat: 28.98, lng: -95.37, risk: 85, commodity: "Polymers", status: "critical", tier: 1 },
+  { id: "SUP-R10", name: "Suez Transit Node", lat: 30.10, lng: 32.90, risk: 91, commodity: "Logistics", status: "critical", tier: 2 },
+  // High
+  { id: "SUP-R03", name: "Istanbul Metals Hub", lat: 41.00, lng: 28.97, risk: 65, commodity: "Metals", status: "high", tier: 2 },
+  { id: "SUP-R11", name: "Linamar Guelph", lat: 43.55, lng: -80.25, risk: 67, commodity: "Drivetrain Parts", status: "high", tier: 1 },
+  { id: "SUP-R12", name: "Schaeffler Herzogenaurach", lat: 49.57, lng: 10.88, risk: 62, commodity: "Bearings", status: "high", tier: 1 },
+  { id: "SUP-R13", name: "Gestamp Bilbao", lat: 43.26, lng: -2.93, risk: 58, commodity: "Stamped Steel", status: "high", tier: 1 },
+  // Medium
+  { id: "SUP-R04", name: "Prague Electronics", lat: 50.07, lng: 14.43, risk: 42, commodity: "Electronics", status: "medium", tier: 1 },
+  { id: "SUP-R07", name: "Visteon Kerpen", lat: 50.87, lng: 6.69, risk: 40, commodity: "Cockpit Electronics", status: "medium", tier: 2 },
+  { id: "SUP-R08", name: "Mahle Stuttgart", lat: 48.79, lng: 9.19, risk: 35, commodity: "Engine Filtration", status: "medium", tier: 2 },
+  { id: "SUP-R14", name: "Hella Lippstadt", lat: 51.67, lng: 8.35, risk: 46, commodity: "Lighting/Sensors", status: "medium", tier: 2 },
+  // Low
+  { id: "SUP-R05", name: "ZF Warsaw Plant", lat: 52.23, lng: 21.01, risk: 20, commodity: "Transmission", status: "low", tier: 1 },
+  { id: "SUP-R06", name: "Continental Timisoara", lat: 45.75, lng: 21.23, risk: 22, commodity: "Tires & Sensors", status: "low", tier: 2 },
+  { id: "SUP-R09", name: "Bosch Brno Campus", lat: 49.19, lng: 16.61, risk: 17, commodity: "Fuel Systems", status: "low", tier: 2 },
+  { id: "SUP-R15", name: "Wabco Brussels", lat: 50.85, lng: 4.35, risk: 14, commodity: "Brake Systems", status: "low", tier: 2 },
 ];
 
 const PINS_MONTERREY = [
-  { id: "SUP-M01", name: "Monterrey HQ", lat: 25.68, lng: -100.31, risk: 45, commodity: "Final Assembly", status: "medium" },
-  { id: "SUP-M02", name: "Guadalajara Setup", lat: 20.65, lng: -103.34, risk: 38, commodity: "Components", status: "low" },
-  { id: "SUP-M03", name: "El Paso Crossing", lat: 31.76, lng: -106.48, risk: 82, commodity: "Logistics", status: "critical" },
-  { id: "SUP-M04", name: "Gulf Ports", lat: 28.3, lng: -89.0, risk: 65, commodity: "Shipping", status: "high" },
-  { id: "SUP-M05", name: "Panama Transit", lat: 9.1, lng: -79.6, risk: 75, commodity: "Shipping", status: "high" },
+  // Critical
+  { id: "SUP-M03", name: "El Paso Crossing", lat: 31.76, lng: -106.48, risk: 82, commodity: "Logistics", status: "critical", tier: 1 },
+  { id: "SUP-M08", name: "Laredo Border Gate", lat: 27.50, lng: -99.50, risk: 77, commodity: "Cross-Border Transport", status: "critical", tier: 1 },
+  // High
+  { id: "SUP-M04", name: "Gulf Port Houston", lat: 29.76, lng: -95.37, risk: 65, commodity: "Shipping", status: "high", tier: 2 },
+  { id: "SUP-M05", name: "Panama Canal Transit", lat: 9.10, lng: -79.60, risk: 72, commodity: "Shipping", status: "high", tier: 2 },
+  { id: "SUP-M09", name: "Maquiladora Juárez", lat: 31.69, lng: -106.42, risk: 68, commodity: "Electronics Assembly", status: "high", tier: 1 },
+  { id: "SUP-M10", name: "Nemak Monterrey", lat: 25.72, lng: -100.31, risk: 61, commodity: "Aluminum Casting", status: "high", tier: 1 },
+  // Medium
+  { id: "SUP-M01", name: "Monterrey HQ", lat: 25.68, lng: -100.31, risk: 45, commodity: "Final Assembly", status: "medium", tier: 1 },
+  { id: "SUP-M02", name: "Guadalajara Mfg", lat: 20.65, lng: -103.34, risk: 38, commodity: "Components", status: "medium", tier: 1 },
+  { id: "SUP-M06", name: "Querétaro Aerospace", lat: 20.60, lng: -100.39, risk: 44, commodity: "Precision Parts", status: "medium", tier: 2 },
+  { id: "SUP-M11", name: "São Paulo Supplier", lat: -23.55, lng: -46.63, risk: 52, commodity: "Steel Components", status: "medium", tier: 2 },
+  { id: "SUP-M12", name: "Bogotá Distribution", lat: 4.71, lng: -74.07, risk: 47, commodity: "Distribution Hub", status: "medium", tier: 2 },
+  // Low
+  { id: "SUP-M07", name: "Saltillo Plant", lat: 25.42, lng: -101.00, risk: 28, commodity: "Plastics", status: "low", tier: 1 },
+  { id: "SUP-M13", name: "Santiago Chile Ops", lat: -33.45, lng: -70.67, risk: 21, commodity: "Copper Wiring", status: "low", tier: 2 },
+  { id: "SUP-M14", name: "Lima Logistics", lat: -12.04, lng: -77.03, risk: 18, commodity: "Port Services", status: "low", tier: 2 },
+  { id: "SUP-M15", name: "Buenos Aires Hub", lat: -34.61, lng: -58.38, risk: 24, commodity: "Warehousing", status: "low", tier: 2 },
 ];
 
 const SIMULATED_WORLD_IMPACTS = [
@@ -306,7 +349,7 @@ function AlertWidget({ onViewDashboard, globalAlerts }) {
               const isActive = active.id === a.id;
               return (
                 <button key={a.id} onClick={() => setActive(a)}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", border: "none", cursor: "pointer", background: isActive ? c.bg : "transparent", borderLeft: `3px solid ${isActive ? c.color : "transparent"}`, textAlign: "left", fontFamily: "'Space Grotesk',sans-serif" }}>
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", borderTop: "none", borderRight: "none", borderBottom: "none", borderLeft: `3px solid ${isActive ? c.color : "transparent"}`, cursor: "pointer", background: isActive ? c.bg : "transparent", textAlign: "left", fontFamily: "'Space Grotesk',sans-serif" }}>
                   <span style={{ width: 7, height: 7, borderRadius: 2, background: c.color, flexShrink: 0 }} />
                   <span style={{ flex: 1, fontSize: 12, fontWeight: 500, color: C.text }}>{a.title}</span>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
@@ -408,7 +451,7 @@ function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
           const isActive = currentProfile.name === p.name;
           return (
             <button key={p.name} onClick={() => setCurrentProfile(p)}
-              style={{ width: "100%", padding: "9px 10px", borderRadius: 6, border: "none", background: isActive ? C.brandLight : "transparent", cursor: "pointer", textAlign: "left", transition: "all 0.15s", borderLeft: isActive ? `3px solid ${C.brand}` : "3px solid transparent" }}>
+              style={{ width: "100%", padding: "9px 10px", borderRadius: 6, borderTop: "none", borderRight: "none", borderBottom: "none", borderLeft: isActive ? `3px solid ${C.brand}` : "3px solid transparent", background: isActive ? C.brandLight : "transparent", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? C.brand : "rgba(255,255,255,0.45)", letterSpacing: "0.01em" }}>{p.name}</div>
               <div style={{ fontSize: 9, color: isActive ? "rgba(254,197,2,0.55)" : "rgba(255,255,255,0.25)", marginTop: 2 }}>{p.industry}</div>
             </button>
@@ -420,7 +463,7 @@ function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
       <nav style={{ flex: 1, padding: "8px 0" }}>
         {nav.map(item => (
           <button key={item.id} onClick={() => setPage(item.id)}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: 0, padding: "0", border: "none", background: page === item.id ? C.sidebarActive : "transparent", cursor: "pointer", textAlign: "left", marginBottom: 1, fontFamily: "'Space Grotesk',sans-serif", transition: "all 0.1s", borderLeft: page === item.id ? `3px solid ${C.brand}` : "3px solid transparent" }}>
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: 0, padding: "0", borderTop: "none", borderRight: "none", borderBottom: "none", borderLeft: page === item.id ? `3px solid ${C.brand}` : "3px solid transparent", background: page === item.id ? C.sidebarActive : "transparent", cursor: "pointer", textAlign: "left", marginBottom: 1, fontFamily: "'Space Grotesk',sans-serif", transition: "all 0.1s" }}>
             <div style={{ width: 44, padding: "11px 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: page === item.id ? C.brand : "rgba(255,255,255,0.3)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em", flexShrink: 0 }}>{item.abbr}</div>
             <div style={{ flex: 1, fontSize: 12, fontWeight: page === item.id ? 700 : 400, color: page === item.id ? C.brand : "rgba(255,255,255,0.5)", paddingRight: 12 }}>{item.label}</div>
             {item.id === "monitor" && (
@@ -1436,8 +1479,9 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
     currentProfile.name === "Grupo Monterrey Industrial" ? PINS_MONTERREY : PINS_NORTHSTAR;
 
   // Use globalSuppliers if it's an array with items, otherwise use the profile defaults
-  const pinsToUse = Array.isArray(globalSuppliers) && globalSuppliers.length > 0 ? globalSuppliers : defaultPins;
+  const allPins = Array.isArray(globalSuppliers) && globalSuppliers.length > 0 ? globalSuppliers : defaultPins;
   const [warningCount, setWarningCount] = useState(0);
+  const [activeFilter, setActiveFilter] = useState("ALL SUPPLIERS");
 
   useEffect(() => {
     const corridors = currentProfile?.logisticsCorridors || ["Taiwan Strait", "Red Sea", "Trans-Pacific"];
@@ -1446,18 +1490,56 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
     });
   }, [currentProfile]);
 
+  // Filter pins based on active filter
+  const pinsToUse = useMemo(() => {
+    if (activeFilter === "CRITICAL RISK") {
+      return allPins.filter(p => Number(p.risk || p.risk_score) >= 75 || p.status === "critical");
+    }
+    if (activeFilter === "TIER 1 ONLY") {
+      return allPins.filter(p => (p.tier === 1 || p.cost_of_delay_tier === 1));
+    }
+    return allPins;
+  }, [allPins, activeFilter]);
+
+  const FILTERS = ["ALL SUPPLIERS", "CRITICAL RISK", "TIER 1 ONLY"];
+
   return (
     <div style={{ fontFamily: "'Space Grotesk',sans-serif", maxWidth: 1200 }}>
       {/* Header strip */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 28px", borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}` }}>
         <div>
           <div style={{ fontSize: 9, color: C.textLight, fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em", fontWeight: 900, marginBottom: 4 }}>GLOBAL NETWORK EXPOSURE</div>
-          <div style={{ fontSize: 12, color: C.textMid }}>{pinsToUse.length} active critical nodes across 3 continents</div>
+          <div style={{ fontSize: 12, color: C.textMid }}>
+            {pinsToUse.length} {activeFilter === "ALL SUPPLIERS" ? "active" : activeFilter === "CRITICAL RISK" ? "critical-risk" : "tier-1"} nodes shown
+          </div>
         </div>
         <div style={{ display: "flex", gap: 0 }}>
-          {["ALL SUPPLIERS", "CRITICAL RISK", "TIER 1 ONLY"].map((f, i) => (
-            <button key={f} style={{ padding: "7px 16px", border: `1px solid ${C.border}`, borderLeft: i > 0 ? "none" : `1px solid ${C.border}`, background: i === 1 ? C.brandLight : "transparent", color: i === 1 ? C.brand : C.textMid, fontSize: 10, fontWeight: i === 1 ? 900 : 500, cursor: "pointer", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>{f}</button>
-          ))}
+          {FILTERS.map((f, i) => {
+            const isActive = activeFilter === f;
+            return (
+              <button
+                key={f}
+                onClick={() => setActiveFilter(f)}
+                style={{
+                  padding: "7px 16px",
+                  borderTop: `1px solid ${isActive ? C.brand : C.border}`,
+                  borderRight: `1px solid ${isActive ? C.brand : C.border}`,
+                  borderBottom: `1px solid ${isActive ? C.brand : C.border}`,
+                  borderLeft: i > 0 ? "none" : `1px solid ${isActive ? C.brand : C.border}`,
+                  background: isActive ? C.brandLight : "transparent",
+                  color: isActive ? C.brand : C.textMid,
+                  fontSize: 10,
+                  fontWeight: isActive ? 900 : 500,
+                  cursor: "pointer",
+                  fontFamily: "'Space Mono',monospace",
+                  letterSpacing: "0.06em",
+                  transition: "all 0.15s",
+                }}
+              >
+                {f}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1473,24 +1555,29 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
         </div>
 
         <Map
-          initialViewState={{ longitude: 0, latitude: 20, zoom: 1.5 }}
+          key={`map-${activeFilter}`}
+          initialViewState={{ longitude: 20, latitude: 25, zoom: 1.4, pitch: 0, bearing: 0 }}
           mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
           attributionControl={false}
+          minZoom={1}
+          maxZoom={8}
         >
           {pinsToUse.map(pin => {
             const baseRisk = Number(pin.risk || pin.risk_score);
             const maritimePenalty = Math.min(15, warningCount * 5);
             const adjustedRisk = Math.min(100, baseRisk + maritimePenalty);
-            const threatColor = warningCount >= 3 ? C.critical : (warningCount > 0 ? C.medium : C.success);
+            // Color by BASE risk so Low pins stay blue regardless of maritime penalty
+            const pinColor = getRiskColor(baseRisk);
             return (
               <Marker key={pin.id} longitude={Number(pin.lng)} latitude={Number(pin.lat)} anchor="center">
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}>
-                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: threatColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: "pingAnim 2s infinite" }}>
-                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: threatColor, border: "2px solid white" }} />
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: pinColor + "40", display: "flex", alignItems: "center", justifyContent: "center", animation: "pingAnim 2s infinite" }}>
+                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: pinColor, border: "2px solid white" }} />
                   </div>
-                  <div style={{ background: "rgba(5,11,20,0.95)", padding: "4px 8px", fontSize: 9, fontWeight: 700, color: "#FFFFFF", marginTop: 3, whiteSpace: "nowrap", border: `1px solid rgba(255,255,255,0.15)`, display: "flex", alignItems: "center", gap: 5, fontFamily: "'Space Mono',monospace" }}>
-                    <span>{pin.name} {adjustedRisk}</span>
-                    {warningCount > 0 && <span style={{ background: threatColor, color: "#0D1C2B", padding: "1px 5px", fontSize: 8, fontWeight: 900 }}>{warningCount} WARN</span>}
+                  <div style={{ background: "rgba(5,11,20,0.95)", padding: "4px 8px", fontSize: 9, fontWeight: 700, color: "#FFFFFF", marginTop: 3, whiteSpace: "nowrap", border: `1px solid ${pinColor}55`, display: "flex", alignItems: "center", gap: 5, fontFamily: "'Space Mono',monospace" }}>
+                    <span style={{ color: pinColor }}>{pin.name}</span>
+                    <span style={{ color: "rgba(255,255,255,0.6)" }}>{adjustedRisk}</span>
+                    {warningCount > 0 && <span style={{ background: pinColor, color: "#0D1C2B", padding: "1px 5px", fontSize: 8, fontWeight: 900 }}>{warningCount} WARN</span>}
                   </div>
                 </div>
               </Marker>
@@ -1501,28 +1588,36 @@ function SuppliersPage({ globalSuppliers, currentProfile }) {
 
       {/* Supplier table */}
       <div style={{ fontSize: 9, fontWeight: 900, color: C.textLight, padding: "14px 28px", fontFamily: "'Space Mono',monospace", letterSpacing: "0.14em", borderBottom: `1px solid ${C.border}` }}>SUPPLIER INTELLIGENCE</div>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ borderBottom: `1px solid ${C.border}` }}>{["SUPPLIER", "COMMODITY", "RISK SCORE", "STATUS", "COORDINATES"].map(h => (
-            <th key={h} style={{ padding: "10px 28px", fontSize: 9, fontWeight: 900, color: C.textLight, textAlign: "left", letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace" }}>{h}</th>
-          ))}</tr>
-        </thead>
-        <tbody>
-          {pinsToUse.map((pin, i) => {
-            const risk = Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5));
-            const riskColor = getRiskColor(risk);
-            return (
-              <tr key={pin.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
-                <td style={{ padding: "13px 28px", fontSize: 12, fontWeight: 700, color: C.text }}>{pin.name}</td>
-                <td style={{ padding: "13px 28px", fontSize: 11, color: C.textMid }}>{pin.commodity}</td>
-                <td style={{ padding: "13px 28px", fontSize: 20, fontWeight: 900, color: riskColor, fontFamily: "'Space Mono',monospace" }}>{risk}</td>
-                <td style={{ padding: "13px 28px" }}><span style={{ fontSize: 9, fontWeight: 900, padding: "3px 8px", background: riskColor + "18", color: riskColor, fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em" }}>{(pin.status || "ACTIVE").toUpperCase()}</span></td>
-                <td style={{ padding: "13px 28px", fontSize: 10, color: C.textLight, fontFamily: "'Space Mono',monospace" }}>{Number(pin.lat).toFixed(2)}, {Number(pin.lng).toFixed(2)}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {pinsToUse.length === 0 ? (
+        <div style={{ padding: "40px 28px", textAlign: "center", color: C.textMid, fontFamily: "'Space Mono',monospace", fontSize: 12 }}>
+          No suppliers match the current filter.
+        </div>
+      ) : (
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>{["SUPPLIER", "COMMODITY", "RISK SCORE", "STATUS", "TIER", "COORDINATES"].map(h => (
+              <th key={h} style={{ padding: "10px 28px", fontSize: 9, fontWeight: 900, color: C.textLight, textAlign: "left", letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace" }}>{h}</th>
+            ))}</tr>
+          </thead>
+          <tbody>
+            {pinsToUse.map((pin, i) => {
+              const risk = Math.min(100, Number(pin.risk || pin.risk_score) + Math.min(15, warningCount * 5));
+              const riskColor = getRiskColor(risk);
+              const tier = pin.tier || pin.cost_of_delay_tier || "—";
+              return (
+                <tr key={pin.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                  <td style={{ padding: "13px 28px", fontSize: 12, fontWeight: 700, color: C.text }}>{pin.name}</td>
+                  <td style={{ padding: "13px 28px", fontSize: 11, color: C.textMid }}>{pin.commodity}</td>
+                  <td style={{ padding: "13px 28px", fontSize: 20, fontWeight: 900, color: riskColor, fontFamily: "'Space Mono',monospace" }}>{risk}</td>
+                  <td style={{ padding: "13px 28px" }}><span style={{ fontSize: 9, fontWeight: 900, padding: "3px 8px", background: riskColor + "18", color: riskColor, fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em" }}>{(pin.status || "ACTIVE").toUpperCase()}</span></td>
+                  <td style={{ padding: "13px 28px", fontSize: 12, fontWeight: 700, color: tier === 1 ? C.brand : C.textMid, fontFamily: "'Space Mono',monospace" }}>T{tier}</td>
+                  <td style={{ padding: "13px 28px", fontSize: 10, color: C.textLight, fontFamily: "'Space Mono',monospace" }}>{Number(pin.lat).toFixed(2)}, {Number(pin.lng).toFixed(2)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
@@ -1676,7 +1771,7 @@ function SettingsPage({ currentProfile, setCurrentProfile, systemProfiles }) {
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            style={{ width: "100%", height: 380, padding: "20px 28px", border: "none", borderBottom: `2px solid ${C.brand}`, background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.text, resize: "none", outline: "none", display: "block" }}
+            style={{ width: "100%", height: 380, padding: "20px 28px", borderTop: "none", borderRight: "none", borderLeft: "none", borderBottom: `2px solid ${C.brand}`, background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.text, resize: "none", outline: "none", display: "block" }}
           />
         ) : (
           <div style={{ width: "100%", height: 380, overflowY: "auto", padding: "20px 28px", background: "#0D1C2B", fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.textMid, whiteSpace: "pre-wrap", borderBottom: `1px solid ${C.border}` }}>

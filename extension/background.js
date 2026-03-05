@@ -5,6 +5,22 @@ const OSIRIS_URL = "http://localhost:3000";
 // Track which alerts we've already notified about to avoid spam
 const notifiedAlerts = new Set();
 
+// ── Feature 1: Right-click Context Menu ───────────────────────────────────────
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.contextMenus.create({
+        id: "osiris-check",
+        title: "⚡ Check in OSIRIS",
+        contexts: ["selection"],
+    });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === "osiris-check" && info.selectionText) {
+        const query = encodeURIComponent(info.selectionText.trim());
+        chrome.tabs.create({ url: `${OSIRIS_URL}?search=${query}&page=risk` });
+    }
+});
+
 // ── Handle messages from content script ───────────────────────────────────────
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === "UPDATE_BADGE") {
@@ -20,7 +36,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             chrome.action.setBadgeText({ text: "", tabId });
         }
 
-        // Store for popup to read
+        // Store for popup + side panel to read
         chrome.storage.session.set({
             [`matches_${tabId}`]: { count, alerts, matchedAlertIds, url: sender.tab?.url }
         });
@@ -50,6 +66,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 });
             });
         }
+    }
+
+    // ── Feature 2: Open side panel from popup ─────────────────────────────────
+    if (message.type === "OPEN_SIDE_PANEL") {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]) {
+                chrome.sidePanel.open({ tabId: tabs[0].id });
+            }
+        });
     }
 });
 

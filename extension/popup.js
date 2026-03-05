@@ -82,4 +82,15 @@ async function init() {
   content.appendChild(listEl);
 }
 
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("DOMContentLoaded", () => {
+  init();
+
+  // ── Feature 2: Open side panel button ──────────────────────────────────────
+  const panelBtn = document.getElementById("open-side-panel");
+  if (panelBtn) {
+    panelBtn.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ type: "OPEN_SIDE_PANEL" });
+      window.close(); // Close popup after opening panel
+    });
+  }
+});
