@@ -253,7 +253,6 @@ localStorage.removeItem('wm-settings-open');
 // Both need i18n initialized so t() does not return undefined.
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import CommandCenter from './app/CommandCenter';
 
 const urlParams = new URL(location.href).searchParams;
 if (urlParams.get('settings') === '1') {
@@ -272,10 +271,9 @@ if (urlParams.get('settings') === '1') {
   );
 } else {
   // Determine route based on pathname
-  const isActionCenter = window.location.pathname === '/';
-  const isNexus = window.location.pathname === '/nexus';
+  const isNexus = window.location.pathname === '/' || window.location.pathname === '/nexus';
 
-  if (isActionCenter || isNexus) {
+  if (isNexus) {
     // Hide WorldMonitor shell
     const appEl = document.getElementById('app');
     const panelEl = document.getElementById('country-deep-dive-panel');
@@ -287,22 +285,15 @@ if (urlParams.get('settings') === '1') {
     reactRoot.id = 'sc-c2-root';
     document.body.appendChild(reactRoot);
 
-    if (isActionCenter) {
+    // @ts-ignore
+    import('../NexusApp.jsx').then((mod) => {
+      const NexusApp = mod.default;
       createRoot(reactRoot).render(
         <React.StrictMode>
-          <CommandCenter />
+          <NexusApp />
         </React.StrictMode>
       );
-    } else {
-      import('../NexusApp.jsx').then((mod) => {
-        const NexusApp = mod.default;
-        createRoot(reactRoot).render(
-          <React.StrictMode>
-            <NexusApp />
-          </React.StrictMode>
-        );
-      });
-    }
+    });
 
     clearChunkReloadGuard(chunkReloadStorageKey);
   } else {
