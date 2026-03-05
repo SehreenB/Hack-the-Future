@@ -1412,9 +1412,9 @@ export default function NexusApp() {
         ::-webkit-scrollbar-thumb { background: #E9D5FF; border-radius: 99px; }
       `}</style>
 
-      <div style={{ display: "flex", minHeight: "100vh" }}>
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
         <Sidebar page={page} setPage={setPage} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bg }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: C.bg, height: "100vh", overflow: "hidden" }}>
           <Topbar title={meta.title} subtitle={meta.subtitle} />
 
           {loading ? (
