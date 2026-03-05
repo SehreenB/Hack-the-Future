@@ -3,6 +3,7 @@ import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditL
 import { getSupplierFinancialHealth } from "./src/services/financialHealthService";
 import { getMaritimeWarnings } from "./src/services/maritimeIntelService";
 import { getSituationForecast } from "./src/services/llmForecastService";
+import { buildCallScript, generateCallScriptAudio } from "./src/services/communicationService";
 import Map, { Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -174,6 +175,7 @@ function RiskGauge({ score, size = 100 }) {
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────
 const Icons = {
+  Phone: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>,
   CheckCircle: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
   AlertTriangle: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
   Shield: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
@@ -625,6 +627,11 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
   const [erpStatus, setErpStatus] = useState("pending");
   const [emailSending, setEmailSending] = useState(false);
 
+  const [voiceStatus, setVoiceStatus] = useState("pending");
+  const [voiceSending, setVoiceSending] = useState(false);
+  const [voiceError, setVoiceError] = useState(null);
+  const voiceAudioRef = useRef(null);
+
   const [supplierHealth, setSupplierHealth] = useState(null);
 
   const [forecast, setForecast] = useState(null);
@@ -641,6 +648,12 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
   useEffect(() => {
     setForecast(null);
     setForecastProvider(null);
+    setVoiceStatus("pending");
+    setVoiceError(null);
+    if (voiceAudioRef.current) {
+      voiceAudioRef.current.pause();
+      voiceAudioRef.current = null;
+    }
   }, [selected]);
 
   useEffect(() => {
@@ -660,6 +673,54 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
     }
     fetchHealth();
   }, [selected]);
+
+  const handleVoiceAction = async (action) => {
+    setVoiceStatus(action);
+    if (action === "approved") {
+      setVoiceSending(true);
+      setVoiceError(null);
+      const scriptText = buildCallScript(selected, selected.supplier, 'an urgent supply continuity review and confirmation of alternative sourcing options');
+      const audioBlob = await generateCallScriptAudio(scriptText);
+
+      if (audioBlob) {
+        setVoiceStatus("playing");
+        const url = URL.createObjectURL(audioBlob);
+        const audio = new Audio(url);
+        voiceAudioRef.current = audio;
+        audio.play();
+        audio.onended = async () => {
+          setVoiceStatus("dispatched");
+          await writeAuditLog({
+            eventType: "voice_alert",
+            disruptionId: selected.id,
+            action: "audio_approved_and_played",
+            payload: { script: scriptText }
+          });
+        };
+      } else {
+        setVoiceError("Audio unavailable — ElevenLabs key not configured. Script ready for manual delivery.");
+        setVoiceStatus("dispatched");
+        await writeAuditLog({
+          eventType: "voice_alert",
+          disruptionId: selected.id,
+          action: "audio_approved_and_played",
+          payload: { script: scriptText, note: "Manual delivery" }
+        });
+      }
+      setVoiceSending(false);
+    } else if (action === "dismissed") {
+      await writeAuditLog({
+        eventType: "voice_alert",
+        disruptionId: selected.id,
+        action: "voice_dismissed",
+        payload: {}
+      });
+      if (voiceAudioRef.current) {
+        voiceAudioRef.current.pause();
+        voiceAudioRef.current = null;
+      }
+    }
+  };
 
   // Handle action approval/dismissal (L2 Autonomy Gate)
   const handleAction = async (type, action) => {
@@ -992,6 +1053,44 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile }) {
           </div>
         </div>
 
+        <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>
+              AI Voice Alert <Icons.Phone />
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 800, color: voiceStatus === "pending" ? C.medium : (voiceStatus === "playing" ? C.success : (voiceStatus === "dispatched" ? C.success : C.textMid)), background: voiceStatus === "pending" ? C.mediumLight : (["playing", "dispatched"].includes(voiceStatus) ? C.successLight : "#F1F5F9"), padding: "4px 10px", borderRadius: 999, border: `1px solid ${voiceStatus === "pending" ? C.mediumBorder : (["playing", "dispatched"].includes(voiceStatus) ? C.success : C.border)} ` }}>
+              {voiceStatus === "pending" ? "⏸ AWAITING APPROVAL" : (voiceStatus === "playing" ? "▶ Playing..." : (voiceStatus === "dispatched" ? "✓ Alert Dispatched" : "DISMISSED"))}
+            </span>
+          </div>
+          <div style={{ background: C.bg, borderRadius: 8, padding: "12px 14px", marginBottom: 12, fontFamily: "monospace" }}>
+            {voiceError && <div style={{ fontSize: 12, color: C.medium, fontWeight: 600, marginBottom: 8, paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>{voiceError}</div>}
+            <div style={{ fontSize: 12, color: voiceError ? C.medium : C.textMid, lineHeight: 1.7, fontFamily: "'Fira Sans',sans-serif" }}>
+              {selected ? buildCallScript(selected, selected.supplier, 'an urgent supply continuity review and confirmation of alternative sourcing options') : ''}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 11, color: C.textLight }}>🔒 Human approval required before dispatch</div>
+            {voiceStatus === "pending" ? (
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => handleVoiceAction("dismissed")} disabled={voiceSending}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.border} `, background: C.card, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  Dismiss
+                </button>
+                <button onClick={() => handleVoiceAction("approved")} disabled={voiceSending}
+                  style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${C.brand} `, background: C.brand, color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  {voiceSending ? "Generating..." : "Approve & Play Audio"}
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${["playing", "dispatched"].includes(voiceStatus) ? C.success : C.border} `, background: ["playing", "dispatched"].includes(voiceStatus) ? C.successLight : "#F1F5F9", color: ["playing", "dispatched"].includes(voiceStatus) ? C.success : C.textMid, fontSize: 12, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>
+                {["playing", "dispatched"].includes(voiceStatus) ? "✓ Dispatched" : "Dismissed"}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16, marginBottom: 18 }}>
         <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} ` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>ERP Adjustment Flag</div>
