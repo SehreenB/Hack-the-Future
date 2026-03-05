@@ -88,7 +88,7 @@ const PROFILES = [MANUFACTURER, RHEINWERK_PROFILE, MONTERREY_PROFILE];
 
 const ACTIVE_ALERTS = [
   {
-    id: "NXS-001", severity: "critical", riskScore: 87, confidenceScore: 91,
+    id: "OSR-001", severity: "critical", riskScore: 87, confidenceScore: 91,
     title: "Taiwan Strait Corridor Closure",
     supplier: "TSMC / Hon Hai", region: "Taiwan / East Asia", commodity: "Semiconductors",
     revenueAtRisk: "$4.2M", costOfDelayTier: 4, daysToStockout: 8, detectedAt: "2 min ago",
@@ -98,7 +98,7 @@ const ACTIVE_ALERTS = [
     bomImpact: "SKU-4421, SKU-4422 — 34% of active BOM",
   },
   {
-    id: "NXS-002", severity: "high", riskScore: 72, confidenceScore: 84,
+    id: "OSR-002", severity: "high", riskScore: 72, confidenceScore: 84,
     title: "Red Sea Rerouting — Transit +14 Days",
     supplier: "Multiple EU Suppliers", region: "Suez Corridor", commodity: "Automotive Parts",
     revenueAtRisk: "$1.8M", costOfDelayTier: 3, daysToStockout: 18, detectedAt: "18 min ago",
@@ -108,7 +108,7 @@ const ACTIVE_ALERTS = [
     bomImpact: "SKU-5891 — 18% of active BOM",
   },
   {
-    id: "NXS-003", severity: "medium", riskScore: 54, confidenceScore: 76,
+    id: "OSR-003", severity: "medium", riskScore: 54, confidenceScore: 76,
     title: "BASF Freeport Plant Explosion",
     supplier: "BASF Corporation", region: "Gulf Coast, USA", commodity: "Specialty Polymers",
     revenueAtRisk: "$620K", costOfDelayTier: 3, daysToStockout: 18, detectedAt: "1 hr ago",
@@ -362,8 +362,8 @@ function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
       {/* Brand */}
       <div style={{ padding: "20px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, background: C.brand, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1px solid rgba(255,255,255,0.15)" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <div style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <img src="/osiris-logo.png" alt="OSIRIS Icon" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
           </div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 900, color: "white", letterSpacing: "0.06em", fontFamily: "'Fira Code',sans-serif" }}>OSIRIS</div>
@@ -439,8 +439,10 @@ function Topbar({ title, subtitle, flash }) {
           <Icons.Lock /> Assist · Recommend · Simulate
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", border: `1px solid ${C.border}`, borderRadius: 8, cursor: "pointer" }}>
-          <div style={{ width: 26, height: 26, borderRadius: 7, background: C.brand, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 11, fontWeight: 700 }}>SC</div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Sarah Chen</span>
+          <div style={{ width: 26, height: 26, borderRadius: "50%", background: "none", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${C.border}`, color: C.textLight }}>
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Sign In</span>
           <span style={{ fontSize: 10, color: C.textLight }}>▾</span>
         </div>
       </div>
