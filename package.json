@@ -79,6 +79,7 @@
     "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.15.0",
     "@deck.gl/aggregation-layers": "^9.2.6",
     "@deck.gl/core": "^9.2.6",
     "@deck.gl/geo-layers": "^9.2.6",

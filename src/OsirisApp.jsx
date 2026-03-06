@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { getDisruptionHistory, subscribeToDisruptions, getSuppliers, writeAuditLog, getAuditLogs, getProfiles, saveProfile, getActiveProfileId, setActiveProfileId } from "./services/supabaseService";
 import { getSupplierFinancialHealth } from "./services/financialHealthService";
 import { getMaritimeWarnings } from "./services/maritimeIntelService";
@@ -88,6 +89,12 @@ const MONTERREY_PROFILE = {
 };
 
 const PROFILES = [MANUFACTURER, RHEINWERK_PROFILE, MONTERREY_PROFILE];
+
+const DEMO_ACCOUNTS = [
+  { email: "Northstar@example.com", password: "Test1234!", profile: MANUFACTURER },
+  { email: "Rheinwerk@example.com", password: "Test1234!", profile: RHEINWERK_PROFILE },
+  { email: "Grupo@example.com", password: "Test1234!", profile: MONTERREY_PROFILE },
+];
 
 const ACTIVE_ALERTS = [
   {
@@ -444,33 +451,39 @@ function Sidebar({ page, setPage, currentProfile, setCurrentProfile }) {
         </div>
       </div>
 
-      {/* Profile Switcher */}
+      {/* Active Profile — shows only the signed-in user's profile */}
       <div style={{ padding: "14px 12px", borderBottom: "1px solid rgba(254,197,2,0.08)", display: "flex", flexDirection: "column", gap: 4 }}>
         <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.12em", marginBottom: 6, paddingLeft: 8, fontFamily: "'Space Mono',monospace" }}>ACTIVE PROFILE</div>
-        {(page === "settings" ? [] : (window.systemProfiles || PROFILES)).map(p => {
-          const isActive = currentProfile.name === p.name;
-          return (
-            <button key={p.name} onClick={() => setCurrentProfile(p)}
-              style={{ width: "100%", padding: "9px 10px", borderRadius: 6, borderTop: "none", borderRight: "none", borderBottom: "none", borderLeft: isActive ? `3px solid ${C.brand}` : "3px solid transparent", background: isActive ? C.brandLight : "transparent", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? C.brand : "rgba(255,255,255,0.45)", letterSpacing: "0.01em" }}>{p.name}</div>
-              <div style={{ fontSize: 9, color: isActive ? "rgba(254,197,2,0.55)" : "rgba(255,255,255,0.25)", marginTop: 2 }}>{p.industry}</div>
-            </button>
-          )
-        })}
+        <div style={{ width: "100%", padding: "9px 10px", borderLeft: `3px solid ${C.brand}`, background: C.brandLight }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.brand, letterSpacing: "0.01em" }}>{currentProfile.name}</div>
+          <div style={{ fontSize: 9, color: "rgba(254,197,2,0.55)", marginTop: 2 }}>{currentProfile.industry}</div>
+        </div>
       </div>
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "8px 0" }}>
-        {nav.map(item => (
-          <button key={item.id} onClick={() => setPage(item.id)}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: 0, padding: "0", borderTop: "none", borderRight: "none", borderBottom: "none", borderLeft: page === item.id ? `3px solid ${C.brand}` : "3px solid transparent", background: page === item.id ? C.sidebarActive : "transparent", cursor: "pointer", textAlign: "left", marginBottom: 1, fontFamily: "'Space Grotesk',sans-serif", transition: "all 0.1s" }}>
-            <div style={{ width: 44, padding: "11px 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: page === item.id ? C.brand : "rgba(255,255,255,0.3)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.08em", flexShrink: 0 }}>{item.abbr}</div>
-            <div style={{ flex: 1, fontSize: 12, fontWeight: page === item.id ? 700 : 400, color: page === item.id ? C.brand : "rgba(255,255,255,0.5)", paddingRight: 12 }}>{item.label}</div>
-            {item.id === "monitor" && (
-              <span style={{ marginRight: 10, width: 16, height: 16, background: C.critical, color: "white", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>3</span>
-            )}
-          </button>
-        ))}
+        {nav.map(item => {
+          const navIcons = {
+            monitor: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>,
+            analysis: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+            playbook: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>,
+            suppliers: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>,
+            audit: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>,
+            settings: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>,
+          };
+          return (
+            <button key={item.id} onClick={() => setPage(item.id)}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 0, padding: "0", borderTop: "none", borderRight: "none", borderBottom: "none", borderLeft: page === item.id ? `3px solid ${C.brand}` : "3px solid transparent", background: page === item.id ? C.sidebarActive : "transparent", cursor: "pointer", textAlign: "left", marginBottom: 1, fontFamily: "'Space Grotesk',sans-serif", transition: "all 0.1s" }}>
+              <div style={{ width: 44, padding: "11px 0", display: "flex", alignItems: "center", justifyContent: "center", color: page === item.id ? C.brand : "rgba(255,255,255,0.28)", flexShrink: 0 }}>
+                {navIcons[item.id]}
+              </div>
+              <div style={{ flex: 1, fontSize: 12, fontWeight: page === item.id ? 700 : 400, color: page === item.id ? C.brand : "rgba(255,255,255,0.5)", paddingRight: 12 }}>{item.label}</div>
+              {item.id === "monitor" && (
+                <span style={{ marginRight: 10, width: 16, height: 16, background: C.critical, color: "white", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>3</span>
+              )}
+            </button>
+          );
+        })}
       </nav>
 
       {/* WorldMonitor Link */}
@@ -696,8 +709,19 @@ Summary: ${selectedAlert?.summary || "No specific alert selected. Answer general
   );
 }
 
-// ─── TOPBAR ───────────────────────────────────────────────────────────────────
-function Topbar({ title, subtitle, flash, action }) {
+// ─── TOPBAR ─────────────────────────────────────────────────────────────────────
+function Topbar({ title, subtitle, flash, action, profileBadge, onSignOut }) {
+  const [profileOpen, setProfileOpen] = useState(false);
+  const badgeRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handler = (e) => { if (badgeRef.current && !badgeRef.current.contains(e.target)) setProfileOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [profileOpen]);
+
   return (
     <header style={{ height: 60, background: "rgba(13,28,43,0.95)", backdropFilter: "blur(12px)", borderBottom: `1px solid ${flash ? C.brand : "rgba(254,197,2,0.1)"}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 50, fontFamily: "'Space Grotesk',sans-serif", transition: "border-color 0.3s ease" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -712,13 +736,61 @@ function Topbar({ title, subtitle, flash, action }) {
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.6)", padding: "6px 12px", border: `1px solid rgba(48,188,237,0.3)`, background: `rgba(48,188,237,0.08)`, fontFamily: "'Space Mono',monospace", letterSpacing: "0.02em" }}>
           <Icons.Lock /> ASSIST · RECOMMEND · SIMULATE
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", border: `1px solid rgba(254,197,2,0.15)`, borderRadius: 6, cursor: "pointer", background: C.brandLight }}>
-          <div style={{ width: 26, height: 26, borderRadius: "50%", background: "none", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${C.brand}`, color: C.brand }}>
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        {/* Profile badge with Sign Out dropdown */}
+        {profileBadge && (
+          <div ref={badgeRef} style={{ position: "relative" }}>
+            <button
+              onClick={() => setProfileOpen(o => !o)}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "6px 14px",
+                border: `1px solid ${profileOpen ? C.brand : "rgba(254,197,2,0.25)"}`,
+                background: profileOpen ? "rgba(254,197,2,0.18)" : C.brandLight,
+                cursor: "pointer", transition: "all 0.15s",
+              }}
+            >
+              <div style={{ width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${C.brand}`, background: "rgba(254,197,2,0.1)", color: C.brand, fontSize: 12, fontWeight: 800, flexShrink: 0 }}>
+                {profileBadge.name.charAt(0)}
+              </div>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.brand, lineHeight: 1.2 }}>{profileBadge.name}</div>
+                <div style={{ fontSize: 9, color: "rgba(254,197,2,0.5)", fontFamily: "'Space Mono',monospace" }}>{profileBadge.email}</div>
+              </div>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 2, color: C.brand, transform: profileOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                <polyline points="2,3 5,7 8,3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {/* Dropdown */}
+            {profileOpen && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 6px)", right: 0, minWidth: "100%",
+                background: "#0D1C2B", border: `1px solid rgba(254,197,2,0.2)`,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.5)", zIndex: 200,
+                animation: "fadeUp 0.15s ease",
+              }}>
+                <button
+                  onClick={() => { setProfileOpen(false); onSignOut && onSignOut(); }}
+                  style={{
+                    width: "100%", padding: "10px 16px", background: "transparent",
+                    border: "none", color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                    textAlign: "left", fontFamily: "'Space Grotesk',sans-serif",
+                    transition: "background 0.1s",
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = "rgba(254,197,2,0.06)"}
+                  onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
-          <span style={{ fontSize: 12, fontWeight: 600, color: C.brand }}>Sign In</span>
-          <span style={{ fontSize: 10, color: C.brand, opacity: 0.6 }}>▾</span>
-        </div>
+        )}
       </div>
     </header>
   );
@@ -1949,8 +2021,130 @@ function SettingsPage({ currentProfile, setCurrentProfile, systemProfiles }) {
   );
 }
 
+// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+function LoginScreen({ onLogin }) {
+  const [selectedIdx, setSelectedIdx] = useState(null);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const CARDS = [
+    { label: "NorthStar Electronics", email: "Northstar@example.com" },
+    { label: "Rheinwerk Automotive GmbH", email: "Rheinwerk@example.com" },
+    { label: "Grupo Monterrey Industrial", email: "Grupo@example.com" },
+  ];
+
+  const handleSignIn = async () => {
+    if (selectedIdx === null) { setError("Please select a company profile."); return; }
+    setLoading(true); setError("");
+    await new Promise(r => setTimeout(r, 500));
+    const ok = onLogin(CARDS[selectedIdx].email, password);
+    if (!ok) setError("Incorrect password. Hint: Test1234!");
+    setLoading(false);
+  };
+
+  const sel = selectedIdx !== null ? CARDS[selectedIdx] : null;
+
+  return (
+    <div style={{ display: "flex", height: "100vh", background: "#05080A", color: "#FFFFFF", fontFamily: "'Space Grotesk',sans-serif", alignItems: "center", justifyContent: "center" }}>
+      <style>{`
+        @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
+        .ls-card:hover { border-color: rgba(254,197,2,0.5) !important; background: rgba(254,197,2,0.07) !important; }
+        .ls-btn:hover:not(:disabled) { background: #e6b000 !important; }
+      `}</style>
+      <div style={{ width: 460, padding: "40px 38px", background: "#080C11", border: "1px solid #1A2635", animation: "fadeUp 0.3s ease" }}>
+
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <svg fill="currentColor" width="36" height="36" viewBox="0 0 24 24" style={{ color: "#FEC502", marginBottom: 12 }}>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+          </svg>
+          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace", color: "#FEC502" }}>OSIRIS</div>
+          <div style={{ fontSize: 10, color: "#3A5A78", marginTop: 4, letterSpacing: "0.08em", fontFamily: "'Space Mono',monospace" }}>SUPPLY CHAIN RISK INTELLIGENCE</div>
+        </div>
+
+        {/* Step 1: Profile picker */}
+        <div style={{ fontSize: 9, color: "#3A5A78", letterSpacing: "0.12em", marginBottom: 8, fontFamily: "'Space Mono',monospace" }}>SELECT COMPANY PROFILE</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 24 }}>
+          {CARDS.map((c, idx) => (
+            <button key={c.email} className="ls-card"
+              onClick={() => { setSelectedIdx(idx); setPassword(""); setError(""); }}
+              style={{
+                width: "100%", padding: "10px 14px", cursor: "pointer", textAlign: "left",
+                background: selectedIdx === idx ? "rgba(254,197,2,0.1)" : "rgba(255,255,255,0.02)",
+                border: `1.5px solid ${selectedIdx === idx ? "#FEC502" : "#1A2635"}`,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                transition: "all 0.15s",
+              }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: selectedIdx === idx ? "#FEC502" : "#8EA5BD" }}>{c.label}</div>
+                <div style={{ fontSize: 10, color: selectedIdx === idx ? "rgba(254,197,2,0.55)" : "#3A5A78", marginTop: 2, fontFamily: "'Space Mono',monospace" }}>{c.email}</div>
+              </div>
+              {selectedIdx === idx && (
+                <div style={{ width: 14, height: 14, background: "#FEC502", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1,5 4,8 9,2" stroke="#05080A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Step 2: Credentials */}
+        <div style={{ opacity: sel ? 1 : 0.3, transition: "opacity 0.2s", pointerEvents: sel ? "auto" : "none" }}>
+          <div style={{ fontSize: 9, color: "#3A5A78", letterSpacing: "0.12em", marginBottom: 10, fontFamily: "'Space Mono',monospace" }}>CREDENTIALS</div>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 9, color: "#3A5A78", marginBottom: 5, fontFamily: "'Space Mono',monospace" }}>EMAIL</div>
+            <input readOnly value={sel?.email || ""} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid #1A2635", color: "#5A7A9D", fontSize: 12, outline: "none", fontFamily: "'Space Mono',monospace" }} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 9, color: "#3A5A78", marginBottom: 5, fontFamily: "'Space Mono',monospace" }}>PASSWORD</div>
+            <input
+              type="password" placeholder="Enter password"
+              value={password} onChange={e => { setPassword(e.target.value); setError(""); }}
+              onKeyDown={e => e.key === "Enter" && handleSignIn()}
+              style={{ width: "100%", padding: "9px 12px", background: "#05080A", border: `1px solid ${error ? "#D36135" : "#1A2635"}`, color: "#FFFFFF", fontSize: 12, outline: "none", fontFamily: "'Space Mono',monospace" }}
+            />
+            {error && <div style={{ color: "#D36135", fontSize: 10, marginTop: 5 }}>{error}</div>}
+          </div>
+          <button className="ls-btn" onClick={handleSignIn} disabled={loading || !password}
+            style={{ width: "100%", padding: "11px", background: loading ? "rgba(254,197,2,0.4)" : "#FEC502", color: "#05080A", border: "none", fontSize: 12, fontWeight: 800, cursor: loading || !password ? "not-allowed" : "pointer", letterSpacing: "0.06em", transition: "background 0.15s" }}>
+            {loading ? "AUTHENTICATING..." : "SIGN IN →"}
+          </button>
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 9, color: "#2A3A4D", fontFamily: "'Space Mono',monospace" }}>
+          DEMO PASSWORD · Test1234!
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
+// Demo auth — validates credentials locally and persists session in localStorage
+function useDemoAuth() {
+  const getStored = () => { try { return JSON.parse(localStorage.getItem("osiris_session") || "null"); } catch { return null; } };
+  const [session, setSession] = useState(getStored);
+
+  const login = (email, password) => {
+    const acc = DEMO_ACCOUNTS.find(
+      a => a.email.toLowerCase() === email.toLowerCase() && a.password === password
+    );
+    if (!acc) return false;
+    const s = { email: acc.email, profile: acc.profile };
+    localStorage.setItem("osiris_session", JSON.stringify(s));
+    setSession(s);
+    return true;
+  };
+
+  const logout = () => { localStorage.removeItem("osiris_session"); setSession(null); };
+
+  return { isAuthenticated: !!session, user: session ? { email: session.email } : null, authProfile: session?.profile || null, login, logout };
+}
+
 export default function OsirisApp() {
+  const { isAuthenticated, user, authProfile, login, logout } = useDemoAuth();
+
   const [page, setPage] = useState("monitor");
   const [focusAlert, setFocusAlert] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -1961,10 +2155,17 @@ export default function OsirisApp() {
   const [globalAuditLogs, setGlobalAuditLogs] = useState([]);
   const [systemProfiles, setSystemProfiles] = useState(PROFILES);
 
-  // Profile selection state (loaded from Supabase)
+  // Profile selection state (loaded from Supabase / Auth0 mapped)
   const [currentProfile, setCurrentProfileState] = useState(MANUFACTURER);
   const [showToast, setShowToast] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (authProfile) {
+      setCurrentProfileState(authProfile);
+      setActiveProfileId(authProfile.name);
+    }
+  }, [authProfile]);
 
   const setCurrentProfile = (profile) => {
     setCurrentProfileState(profile);
@@ -2050,11 +2251,14 @@ export default function OsirisApp() {
       else activeUnsub = unsub;
     });
 
+    // Clean up
     return () => {
       isMounted = false;
       if (activeUnsub) activeUnsub();
-    }
+    };
   }, []);
+
+  if (!isAuthenticated) return <LoginScreen onLogin={login} />;
 
   const handleViewAlert = (alert) => { setFocusAlert(alert); setPage("analysis"); };
   const handleAnalyze = (alert) => { setFocusAlert(alert); setPage("analysis"); };
@@ -2099,13 +2303,17 @@ export default function OsirisApp() {
             title={meta.title}
             subtitle={meta.subtitle}
             flash={showToast !== null}
+            profileBadge={{ name: currentProfile.name, email: user?.email || "" }}
+            onSignOut={logout}
             action={
-              <button
-                onClick={() => setChatOpen(!chatOpen)}
-                style={{ height: 32, padding: "0 12px", borderRadius: 6, border: `1px solid ${C.brand}`, background: chatOpen ? C.brand : "transparent", color: chatOpen ? "#12263A" : C.brand, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace", transition: "all 0.2s" }}
-              >
-                Ask OSIRIS
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  onClick={() => setChatOpen(!chatOpen)}
+                  style={{ height: 32, padding: "0 12px", borderRadius: 6, border: `1px solid ${C.brand}`, background: chatOpen ? C.brand : "transparent", color: chatOpen ? "#12263A" : C.brand, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace", transition: "all 0.2s" }}
+                >
+                  Ask OSIRIS
+                </button>
+              </div>
             }
           />
 

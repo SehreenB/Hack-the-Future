@@ -260,6 +260,7 @@ localStorage.removeItem('wm-settings-open');
 // Both need i18n initialized so t() does not return undefined.
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { Auth0Provider } from '@auth0/auth0-react';
 // @ts-ignore
 import OsirisApp from './OsirisApp.jsx';
 
@@ -306,7 +307,13 @@ if (urlParams.get('settings') === '1') {
 
     createRoot(reactRoot).render(
       <React.StrictMode>
-        <OsirisApp />
+        <Auth0Provider
+          domain="dev-bpmine81617zguqw.ca.auth0.com"
+          clientId="J7LfDk9nGfWsiaKTD4CE8wNs64QX09rR"
+          authorizationParams={{ redirect_uri: window.location.origin }}
+        >
+          <OsirisApp />
+        </Auth0Provider>
       </React.StrictMode>
     );
 
