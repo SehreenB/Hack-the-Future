@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite';
+﻿import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { resolve, dirname, extname } from 'path';
@@ -68,7 +68,7 @@ function htmlVariantPlugin(): Plugin {
         .replace(/"description": "Real-time global intelligence dashboard with live news, markets, military tracking, infrastructure monitoring, and geopolitical data."/, `"description": "${activeMeta.description}"`)
         .replace(/"featureList": \[[\s\S]*?\]/, `"featureList": ${JSON.stringify(activeMeta.features, null, 8).replace(/\n/g, '\n      ')}`);
 
-      // Theme-color meta — warm cream for happy variant
+      // Theme-color meta â€” warm cream for happy variant
       if (activeVariant === 'happy') {
         result = result.replace(
           /<meta name="theme-color" content=".*?" \/>/,
@@ -77,7 +77,7 @@ function htmlVariantPlugin(): Plugin {
       }
 
       // Desktop builds: inject build-time variant into the inline script so data-variant is set
-      // before CSS loads. Web builds always use 'full' — runtime hostname detection handles variants.
+      // before CSS loads. Web builds always use 'full' â€” runtime hostname detection handles variants.
       if (activeVariant !== 'full') {
         result = result.replace(
           /if\(v\)document\.documentElement\.dataset\.variant=v;/,
@@ -152,7 +152,7 @@ function polymarketPlugin(): Plugin {
           res.setHeader('X-Polymarket-Source', 'gamma');
           res.end(data);
         } catch {
-          // Expected: Cloudflare JA3 blocks server-side TLS — return empty array
+          // Expected: Cloudflare JA3 blocks server-side TLS â€” return empty array
           res.setHeader('Cache-Control', 'public, max-age=300');
           res.end('[]');
         }
@@ -392,7 +392,7 @@ function sebufApiPlugin(): Plugin {
   };
 }
 
-// RSS proxy allowlist — duplicated from api/rss-proxy.js for dev mode.
+// RSS proxy allowlist â€” duplicated from api/rss-proxy.js for dev mode.
 // Keep in sync when adding new domains.
 const RSS_PROXY_ALLOWED_DOMAINS = new Set([
   'feeds.bbci.co.uk', 'www.theguardian.com', 'feeds.npr.org', 'news.google.com',
@@ -442,7 +442,7 @@ const RSS_PROXY_ALLOWED_DOMAINS = new Set([
   'news.ycombinator.com',
   // Finance variant
   'www.coindesk.com', 'cointelegraph.com',
-  // Happy variant — positive news sources
+  // Happy variant â€” positive news sources
   'www.goodnewsnetwork.org', 'www.positive.news', 'reasonstobecheerful.world',
   'www.optimistdaily.com', 'www.sunnyskyz.com', 'www.huffpost.com',
   'www.sciencedaily.com', 'feeds.nature.com', 'www.livescience.com', 'www.newscientist.com',
@@ -804,13 +804,19 @@ export default defineConfig({
       ],
     },
     proxy: {
+      // ADK Backend proxy
+      '/api/adk': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/adk/, ''),
+      },
       // Yahoo Finance API
       '/api/yahoo': {
         target: 'https://query1.finance.yahoo.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/yahoo/, ''),
       },
-      // Polymarket handled by polymarketPlugin() — no prod proxy needed
+      // Polymarket handled by polymarketPlugin() â€” no prod proxy needed
       // USGS Earthquake API
       '/api/earthquake': {
         target: 'https://earthquake.usgs.gov',
@@ -1171,3 +1177,4 @@ export default defineConfig({
     },
   },
 });
+

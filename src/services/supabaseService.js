@@ -172,12 +172,26 @@ export async function getDisruptionHistory(limit = 20) {
 export async function writeAuditLog({ eventType, disruptionId, actor, action, payload }) {
   const client = await getClient();
 
+  let dbDisruptionId = null;
+  if (client && disruptionId) {
+    // Check if it's already a valid UUID
+    if (disruptionId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      dbDisruptionId = disruptionId;
+    } else {
+      // It's a signal_id like OSR-002. Try resolving its true UUID if it exists in the disruptions table.
+      const { data } = await client.from("disruptions").select("id").eq("signal_id", disruptionId).limit(1).maybeSingle();
+      if (data) {
+        dbDisruptionId = data.id;
+      }
+    }
+  }
+
   const entry = {
     event_type: eventType,
-    disruption_id: disruptionId,
+    disruption_id: dbDisruptionId,
     actor: actor || "system",
     action,
-    payload,
+    payload: { ...payload, signal_id: disruptionId }, // Keep the original string id safely in the JSON payload
   };
 
   if (!client) {
