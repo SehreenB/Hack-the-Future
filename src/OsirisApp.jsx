@@ -2091,73 +2091,103 @@ function LoginScreen({ onLogin }) {
   const sel = selectedIdx !== null ? CARDS[selectedIdx] : null;
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#05080A", color: "#FFFFFF", fontFamily: "'Space Grotesk',sans-serif", alignItems: "center", justifyContent: "center" }}>
+    <div style={{
+      display: "flex", height: "100vh", color: "#FFFFFF",
+      fontFamily: "'Space Grotesk',sans-serif", alignItems: "center", justifyContent: "center",
+      backgroundImage: "url('/osiris-login-bg.png')",
+      backgroundSize: "cover", backgroundPosition: "center 20%",
+      position: "relative",
+    }}>
+      {/* Dark overlay to boost contrast behind the card */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)" }} />
+
       <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
-        .ls-card:hover { border-color: rgba(254,197,2,0.5) !important; background: rgba(254,197,2,0.07) !important; }
-        .ls-btn:hover:not(:disabled) { background: #e6b000 !important; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+        .ls-card:hover { border-color: rgba(254,197,2,0.6) !important; background: rgba(254,197,2,0.1) !important; }
+        .ls-btn:hover:not(:disabled) { background: #e6b000 !important; box-shadow: 0 0 20px rgba(254,197,2,0.4) !important; }
+        .ls-input::placeholder { color: rgba(255,255,255,0.35); }
       `}</style>
-      <div style={{ width: 460, padding: "40px 38px", background: "#080C11", border: "1px solid #1A2635", animation: "fadeUp 0.3s ease" }}>
+
+      {/* Glass card */}
+      <div style={{
+        position: "relative", zIndex: 1,
+        width: 460, padding: "40px 38px",
+        background: "rgba(5, 10, 18, 0.45)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        border: "1px solid rgba(254,197,2,0.2)",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
+        animation: "fadeUp 0.4s ease",
+      }}>
 
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <svg fill="currentColor" width="36" height="36" viewBox="0 0 24 24" style={{ color: "#FEC502", marginBottom: 12 }}>
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-          </svg>
-          <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace", color: "#FEC502" }}>OSIRIS</div>
-          <div style={{ fontSize: 10, color: "#3A5A78", marginTop: 4, letterSpacing: "0.08em", fontFamily: "'Space Mono',monospace" }}>SUPPLY CHAIN RISK INTELLIGENCE</div>
+          <div style={{ width: 68, height: 68, margin: "0 auto 14px", overflow: "hidden", borderRadius: "50%", border: "2px solid rgba(254,197,2,0.4)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 24px rgba(254,197,2,0.25)" }}>
+            <img src="/osiris-eye-logo.jpg" alt="OSIRIS" style={{ width: 76, height: 76, objectFit: "cover", mixBlendMode: "screen", filter: "brightness(1.15) saturate(1.3)" }} />
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "0.14em", fontFamily: "'Space Mono',monospace", color: "#FEC502", textShadow: "0 0 20px rgba(254,197,2,0.5)" }}>OSIRIS</div>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 5, letterSpacing: "0.1em", fontFamily: "'Space Mono',monospace" }}>SUPPLY CHAIN RISK INTELLIGENCE</div>
         </div>
 
-        {/* Step 1: Profile picker */}
-        <div style={{ fontSize: 9, color: "#3A5A78", letterSpacing: "0.12em", marginBottom: 8, fontFamily: "'Space Mono',monospace" }}>SELECT COMPANY PROFILE</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 24 }}>
+        {/* Section label */}
+        <div style={{ fontSize: 9, color: "rgba(254,197,2,0.7)", letterSpacing: "0.14em", marginBottom: 10, fontFamily: "'Space Mono',monospace", fontWeight: 700 }}>SELECT COMPANY PROFILE</div>
+
+        {/* Profile cards */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
           {CARDS.map((c, idx) => (
             <button key={c.email} className="ls-card"
               onClick={() => { setSelectedIdx(idx); setPassword(""); setError(""); }}
               style={{
-                width: "100%", padding: "10px 14px", cursor: "pointer", textAlign: "left",
-                background: selectedIdx === idx ? "rgba(254,197,2,0.1)" : "rgba(255,255,255,0.02)",
-                border: `1.5px solid ${selectedIdx === idx ? "#FEC502" : "#1A2635"}`,
+                width: "100%", padding: "11px 14px", cursor: "pointer", textAlign: "left",
+                background: selectedIdx === idx ? "rgba(254,197,2,0.13)" : "rgba(255,255,255,0.05)",
+                border: `1.5px solid ${selectedIdx === idx ? "rgba(254,197,2,0.7)" : "rgba(255,255,255,0.12)"}`,
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 transition: "all 0.15s",
               }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: selectedIdx === idx ? "#FEC502" : "#8EA5BD" }}>{c.label}</div>
-                <div style={{ fontSize: 10, color: selectedIdx === idx ? "rgba(254,197,2,0.55)" : "#3A5A78", marginTop: 2, fontFamily: "'Space Mono',monospace" }}>{c.email}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: selectedIdx === idx ? "#FEC502" : "#FFFFFF" }}>{c.label}</div>
+                <div style={{ fontSize: 10, color: selectedIdx === idx ? "rgba(254,197,2,0.65)" : "rgba(255,255,255,0.5)", marginTop: 3, fontFamily: "'Space Mono',monospace" }}>{c.email}</div>
               </div>
               {selectedIdx === idx && (
-                <div style={{ width: 14, height: 14, background: "#FEC502", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1,5 4,8 9,2" stroke="#05080A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <div style={{ width: 16, height: 16, background: "#FEC502", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1,5 4,8 9,2" stroke="#05080A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
               )}
             </button>
           ))}
         </div>
 
-        {/* Step 2: Credentials */}
-        <div style={{ opacity: sel ? 1 : 0.3, transition: "opacity 0.2s", pointerEvents: sel ? "auto" : "none" }}>
-          <div style={{ fontSize: 9, color: "#3A5A78", letterSpacing: "0.12em", marginBottom: 10, fontFamily: "'Space Mono',monospace" }}>CREDENTIALS</div>
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 9, color: "#3A5A78", marginBottom: 5, fontFamily: "'Space Mono',monospace" }}>EMAIL</div>
-            <input readOnly value={sel?.email || ""} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid #1A2635", color: "#5A7A9D", fontSize: 12, outline: "none", fontFamily: "'Space Mono',monospace" }} />
+        {/* Divider */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.08)", marginBottom: 20 }} />
+
+        {/* Credentials */}
+        <div style={{ opacity: sel ? 1 : 0.4, transition: "opacity 0.2s", pointerEvents: sel ? "auto" : "none" }}>
+          <div style={{ fontSize: 9, color: "rgba(254,197,2,0.7)", letterSpacing: "0.14em", marginBottom: 14, fontFamily: "'Space Mono',monospace", fontWeight: 700 }}>CREDENTIALS</div>
+
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", marginBottom: 6, fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>EMAIL</div>
+            <input readOnly value={sel?.email || ""}
+              style={{ width: "100%", padding: "10px 13px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: "#FFFFFF", fontSize: 12, outline: "none", fontFamily: "'Space Mono',monospace", boxSizing: "border-box" }} />
           </div>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 9, color: "#3A5A78", marginBottom: 5, fontFamily: "'Space Mono',monospace" }}>PASSWORD</div>
-            <input
+
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", marginBottom: 6, fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>PASSWORD</div>
+            <input className="ls-input"
               type="password" placeholder="Enter password"
               value={password} onChange={e => { setPassword(e.target.value); setError(""); }}
               onKeyDown={e => e.key === "Enter" && handleSignIn()}
-              style={{ width: "100%", padding: "9px 12px", background: "#05080A", border: `1px solid ${error ? "#D36135" : "#1A2635"}`, color: "#FFFFFF", fontSize: 12, outline: "none", fontFamily: "'Space Mono',monospace" }}
+              style={{ width: "100%", padding: "10px 13px", background: "rgba(0,0,0,0.4)", border: `1px solid ${error ? "#E8603C" : "rgba(255,255,255,0.15)"}`, color: "#FFFFFF", fontSize: 12, outline: "none", fontFamily: "'Space Mono',monospace", boxSizing: "border-box" }}
             />
-            {error && <div style={{ color: "#D36135", fontSize: 10, marginTop: 5 }}>{error}</div>}
+            {error && <div style={{ color: "#FF7A5A", fontSize: 11, marginTop: 6, fontWeight: 600 }}>{error}</div>}
           </div>
+
           <button className="ls-btn" onClick={handleSignIn} disabled={loading || !password}
-            style={{ width: "100%", padding: "11px", background: loading ? "rgba(254,197,2,0.4)" : "#FEC502", color: "#05080A", border: "none", fontSize: 12, fontWeight: 800, cursor: loading || !password ? "not-allowed" : "pointer", letterSpacing: "0.06em", transition: "background 0.15s" }}>
+            style={{ width: "100%", padding: "12px", background: loading ? "rgba(254,197,2,0.35)" : "#FEC502", color: "#05080A", border: "none", fontSize: 12, fontWeight: 900, cursor: loading || !password ? "not-allowed" : "pointer", letterSpacing: "0.1em", transition: "all 0.15s", boxSizing: "border-box" }}>
             {loading ? "AUTHENTICATING..." : "SIGN IN →"}
           </button>
         </div>
 
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 9, color: "#2A3A4D", fontFamily: "'Space Mono',monospace" }}>
+        <div style={{ textAlign: "center", marginTop: 22, fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: "'Space Mono',monospace", letterSpacing: "0.06em" }}>
           DEMO PASSWORD · Test1234!
         </div>
       </div>
