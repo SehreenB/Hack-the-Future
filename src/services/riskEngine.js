@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { MANUFACTURER_PROFILE } from "../data/manufacturerProfile";
-
+const ADK_BACKEND_URL = import.meta.env.VITE_ADK_BACKEND_URL || 'http://localhost:8000';
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 const RISK_THRESHOLD = parseInt(import.meta.env.VITE_RISK_ESCALATION_THRESHOLD || "65");
 const CONFIDENCE_THRESHOLD = parseInt(import.meta.env.VITE_CONFIDENCE_THRESHOLD || "70");
@@ -16,7 +16,33 @@ const FP_THRESHOLD = parseInt(import.meta.env.VITE_FALSE_POSITIVE_THRESHOLD || "
  * Returns a fully structured analysis result
  */
 export async function analyzeDisruption({ signal, falsePositiveRate = 12, onProgress }) {
-  if (!ANTHROPIC_KEY || ANTHROPIC_KEY === "your_anthropic_key_here") {
+  // PRIMARY: Try Google ADK backend (Gemini via Vertex AI)
+  try {
+    const adkRes = await fetch(`${ADK_BACKEND_URL}/api/risk-analysis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        signal_title: signal.title || '',
+        signal_description: signal.description || signal.rawText || '',
+        supplier_hint: signal.supplierHint || '',
+        region_hint: signal.regionHint || '',
+        commodity_hint: signal.commodityHint || '',
+        manufacturer_profile: JSON.stringify(MANUFACTURER_PROFILE),
+        false_positive_rate: falsePositiveRate
+      })
+    });
+    if (adkRes.ok) {
+      const adkResult = await adkRes.json();
+      if (adkResult && adkResult.riskScore && !adkResult.error) {
+        console.log('[RiskEngine] ADK backend succeeded, provider:', adkResult._provider);
+        onProgress && onProgress('COMPLETE');
+        return { ...adkResult, analysisTimestamp: new Date().toISOString() };
+      }
+    }
+  } catch (adkErr) {
+    console.warn('[RiskEngine] ADK backend unavailable, falling back to Claude:', adkErr.message);
+  }
+  // PRIMARY: Google ADK backend
     console.warn("[RiskEngine] Anthropic API key not configured. Using mock analysis.");
     return getMockAnalysis(signal);
   }

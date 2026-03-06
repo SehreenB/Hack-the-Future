@@ -1059,6 +1059,37 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile, chatOpen }) {
     }
   };
 
+  const [adkAnalysis, setAdkAnalysis] = useState(null);
+  const [adkLoading, setAdkLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selected) return;
+    setAdkAnalysis(null);
+    setAdkLoading(true);
+    fetch('http://localhost:8000/api/risk-analysis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        signal_title: selected.title || '',
+        signal_description: selected.summary || '',
+        supplier_hint: selected.supplier || '',
+        region_hint: selected.region || '',
+        commodity_hint: selected.commodity || '',
+        manufacturer_profile: JSON.stringify(currentProfile || {}),
+        false_positive_rate: 12
+      })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.riskScore && !data.error) {
+          setAdkAnalysis(data);
+          console.log('[OSIRIS] ADK analysis loaded, provider:', data._provider);
+        }
+      })
+      .catch(err => console.warn('[OSIRIS] ADK unavailable:', err.message))
+      .finally(() => setAdkLoading(false));
+  }, [selected?.id]);
+
   const handleGenerateForecast = async () => {
     setIsLoadingForecast(true);
     const result = await getSituationForecast(selected, currentProfile || MANUFACTURER);
@@ -1070,7 +1101,7 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile, chatOpen }) {
   if (!selected) return null;
   const cfg = SEV_CFG[selected.severity] || SEV_CFG.medium;
 
-  const activePlaybook = selected.playbook && selected.playbook.length > 0 ? selected.playbook : PLAYBOOK;
+  const activePlaybook = adkAnalysis?.playbook?.length > 0 ? adkAnalysis.playbook : (selected.playbook && selected.playbook.length > 0 ? selected.playbook : PLAYBOOK);
 
   const baseReasoning = [
     "01 SENSE: GNews signal ingested. Reuters-sourced article. Credibility: 88%. GDELT tone: -8.4 (Critical).",
@@ -1121,19 +1152,29 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile, chatOpen }) {
     baseReasoning.splice(4, 0, `04.a GEOPOLITICAL: ${matchedCountry} detected.Baseline risk multiplier applied(* 1.${countryBaseline < 10 ? '0' + countryBaseline : countryBaseline} to base score).`);
   }
 
+  const adkScenarios = adkAnalysis?.scenarios;
+  const adkCritic = adkAnalysis?.criticPass || adkAnalysis?.critic_pass;
+  const adkReasoning = adkAnalysis?.reasoningTrace || adkAnalysis?.reasoning_trace;
+
   const mockResult = {
     scenarios: {
-      baseCase: { delay: "14d", cost: "+$85K", rev: "-$1.8M", svc: "72%" },
-      stressCase: { delay: "17d", cost: "+$98K", rev: "-$2.2M", svc: "61%", note: "+20% delay / +15% cost" },
-      shockCase: { delay: "21d", cost: "+$119K", rev: "-$3.1M", svc: "44%", note: "+50% delay / +40% cost" },
+      baseCase: adkScenarios?.baseCase
+        ? { delay: `${adkScenarios.baseCase.delayDays ?? adkScenarios.baseCase.delay ?? "14"}d`, cost: adkScenarios.baseCase.additionalCost ?? adkScenarios.baseCase.cost ?? "+$85K", rev: adkScenarios.baseCase.revenueImpact ?? adkScenarios.baseCase.rev ?? "-$1.8M", svc: adkScenarios.baseCase.serviceLevel ?? adkScenarios.baseCase.svc ?? "72%" }
+        : { delay: "14d", cost: "+$85K", rev: "-$1.8M", svc: "72%" },
+      stressCase: adkScenarios?.stressCase
+        ? { delay: `${adkScenarios.stressCase.delayDays ?? adkScenarios.stressCase.delay ?? "17"}d`, cost: adkScenarios.stressCase.additionalCost ?? adkScenarios.stressCase.cost ?? "+$98K", rev: adkScenarios.stressCase.revenueImpact ?? adkScenarios.stressCase.rev ?? "-$2.2M", svc: adkScenarios.stressCase.serviceLevel ?? adkScenarios.stressCase.svc ?? "61%", note: "+20% delay / +15% cost" }
+        : { delay: "17d", cost: "+$98K", rev: "-$2.2M", svc: "61%", note: "+20% delay / +15% cost" },
+      shockCase: adkScenarios?.shockCase
+        ? { delay: `${adkScenarios.shockCase.delayDays ?? adkScenarios.shockCase.delay ?? "21"}d`, cost: adkScenarios.shockCase.additionalCost ?? adkScenarios.shockCase.cost ?? "+$119K", rev: adkScenarios.shockCase.revenueImpact ?? adkScenarios.shockCase.rev ?? "-$3.1M", svc: adkScenarios.shockCase.serviceLevel ?? adkScenarios.shockCase.svc ?? "44%", note: "+50% delay / +40% cost" }
+        : { delay: "21d", cost: "+$119K", rev: "-$3.1M", svc: "44%", note: "+50% delay / +40% cost" },
     },
     criticPass: {
-      alt: "Demand shaping: delay non-critical orders 3 weeks → reduces revenue impact by $400K.",
-      cash: "Combined Options 1+3: $57K outflow vs $4.2M revenue at risk. Ratio: 74:1.",
-      overlooked: "Samsung Foundry capacity may be constrained industry-wide.",
-      validity: "Escalation valid: All 3 thresholds met (Risk 87>65, Confidence 91%>70%, FP 12%<20%).",
+      alt: adkCritic?.alt ?? adkCritic?.alternative ?? "Demand shaping: delay non-critical orders 3 weeks → reduces revenue impact by $400K.",
+      cash: adkCritic?.cash ?? adkCritic?.cashFlow ?? "Combined Options 1+3: $57K outflow vs $4.2M revenue at risk. Ratio: 74:1.",
+      overlooked: adkCritic?.overlooked ?? adkCritic?.overlookedRisks ?? "Samsung Foundry capacity may be constrained industry-wide.",
+      validity: adkCritic?.validity ?? adkCritic?.escalationValidity ?? "Escalation valid: All 3 thresholds met (Risk 87>65, Confidence 91%>70%, FP 12%<20%).",
     },
-    reasoning: baseReasoning,
+    reasoning: adkReasoning?.length > 0 ? adkReasoning : baseReasoning,
   };
 
   return (
@@ -1239,7 +1280,11 @@ function AnalysisPage({ focusAlert, globalAlerts, currentProfile, chatOpen }) {
 
         {/* Scenarios */}
         <div style={{ background: C.card, borderRadius: 12, padding: "18px 22px", border: `1px solid ${C.border} `, marginBottom: 18 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 14, fontFamily: "'Sora',sans-serif" }}>Scenario Simulation</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: C.text, fontFamily: "'Sora',sans-serif" }}>Scenario Simulation</div>
+            {adkLoading && <div style={{ fontSize: 10, color: C.accent, fontFamily: "'Space Mono',monospace", animation: "pulseAnim 1.5s infinite" }}>⬡ GEMINI ANALYZING...</div>}
+            {adkAnalysis && !adkLoading && <div style={{ fontSize: 10, color: C.success, fontFamily: "'Space Mono',monospace" }}>✓ POWERED BY GEMINI</div>}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
             {[
               { label: "Base Case", ...mockResult.scenarios.baseCase, color: C.success },
