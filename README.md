@@ -2,7 +2,7 @@
 
 **Hack the Future**
 
-OSIRIS (also known as NEXUS internally) is an AI-powered supply chain command center designed to detect global disruptions in real-time, predict business impact using LLMs, and generate actionable playbooks to mitigate revenue loss. 
+OSIRIS is an AI-powered supply chain command center designed to detect global disruptions in real-time, predict business impact using LLMs, and generate actionable playbooks to mitigate revenue loss. 
 
 Built on top of the original World Monitor core, OSIRIS shifts the focus from general OSINT and geopolitics to **proactive supply chain defense and operations**.
 
