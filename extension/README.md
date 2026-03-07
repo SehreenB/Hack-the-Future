@@ -3,6 +3,7 @@
 ## What it does
 
 Scans any web page for supplier names, product keywords, and commodities that match active OSIRIS supply chain alerts. When a match is found, it underlines the text (like Grammarly) and shows a floating risk card with:
+
 - Risk score (0–100)
 - Alert title & summary
 - Revenue at risk & stockout days
